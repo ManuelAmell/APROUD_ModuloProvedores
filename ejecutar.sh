@@ -14,8 +14,9 @@ mkdir -p bin
 
 # Compilar todos los archivos Java
 echo "Compilando archivos Java..."
-javac -d bin -encoding UTF-8 \
+javac -d bin -encoding UTF-8 -cp "lib/*" \
     src/modelo/*.java \
+    src/util/*.java \
     src/dao/*.java \
     src/servicio/*.java \
     src/vista/*.java \
@@ -37,5 +38,5 @@ echo "  Ejecutando aplicación..."
 echo "========================================"
 echo ""
 
-# Ejecutar la aplicación
-java -cp bin Main
+# Ejecutar la aplicación con el driver MySQL en el classpath
+java -cp "bin:lib/*" Main

@@ -32,9 +32,9 @@ package servicio;
 // Importación de clases necesarias
 import java.util.List;
 
-// Importamos el DAO y su implementación
+// Importamos el DAO y su implementación MySQL
 import dao.ProveedorDAO;
-import dao.ProveedorDAOImpl;
+import dao.ProveedorDAOMySQL;
 
 // Importamos el modelo
 import modelo.Proveedor;
@@ -60,7 +60,7 @@ public class ProveedorService {
      * Referencia al DAO para acceder a los datos.
      * 
      * Usamos la INTERFAZ como tipo (ProveedorDAO) en lugar
-     * de la implementación concreta (ProveedorDAOImpl).
+     * de la implementación concreta (ProveedorDAOMySQL).
      * 
      * ¿Por qué?
      * Esto se llama "programar hacia interfaces" y permite:
@@ -75,9 +75,9 @@ public class ProveedorService {
     // ========================================================
 
     /**
-     * Constructor que inicializa el servicio con un DAO.
+     * Constructor que inicializa el servicio con un DAO MySQL.
      * 
-     * Creamos una instancia de ProveedorDAOImpl pero la
+     * Creamos una instancia de ProveedorDAOMySQL pero la
      * guardamos en una variable de tipo ProveedorDAO.
      * 
      * Esto es posible gracias al POLIMORFISMO: una variable
@@ -85,8 +85,8 @@ public class ProveedorService {
      * que implemente esa interfaz.
      */
     public ProveedorService() {
-        // Creamos la implementación del DAO
-        this.proveedorDAO = new ProveedorDAOImpl();
+        // Usamos la implementación MySQL del DAO
+        this.proveedorDAO = new ProveedorDAOMySQL();
     }
 
     // ========================================================
