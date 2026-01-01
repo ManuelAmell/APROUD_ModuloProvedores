@@ -134,8 +134,17 @@ public class ProveedorService {
 
         // Validar formato de email si se proporcionó
         if (proveedor.getEmail() != null && !proveedor.getEmail().isEmpty()) {
-            // Validación simple: debe contener @
-            if (!proveedor.getEmail().contains("@")) {
+            /*
+             * Expresión regular para validar email:
+             * ^[\w.-]+ : Inicio con letras, números, punto o guion
+             * 
+             * @ : Debe contener arroba
+             * [\w.-]+ : Dominio con letras, números, punto o guion
+             * \. : Un punto
+             * [a-zA-Z]{2,} : Extensión de al menos 2 letras
+             */
+            String emailRegex = "^[\\w.-]+@[\\w.-]+\\.[a-zA-Z]{2,}$";
+            if (!proveedor.getEmail().matches(emailRegex)) {
                 return "Error: El formato del email no es válido";
             }
         }
