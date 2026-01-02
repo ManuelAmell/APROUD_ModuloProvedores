@@ -70,6 +70,14 @@ import servicio.ProveedorService;
 public class VentanaPrincipal extends JFrame {
 
     // ========================================================
+    // COLORES (Paleta Azul)
+    // ========================================================
+    private final Color COLOR_PRIMARIO = new Color(25, 118, 210); // Azul oscuro
+    private final Color COLOR_SECUNDARIO = new Color(33, 150, 243); // Azul medio
+    private final Color COLOR_FONDO = new Color(227, 242, 253); // Azul muy claro
+    private final Color COLOR_TEXTO = Color.WHITE;
+
+    // ========================================================
     // ATRIBUTOS - Componentes de la interfaz
     // ========================================================
 
@@ -244,6 +252,8 @@ public class VentanaPrincipal extends JFrame {
          * BorderFactory.createEmptyBorder(top, left, bottom, right)
          * crea un borde invisible que actúa como margen.
          */
+        // Configuramos el color de fondo
+        panel.setBackground(COLOR_FONDO);
         panel.setBorder(BorderFactory.createEmptyBorder(15, 15, 5, 15));
 
         // -------- Título --------
@@ -263,6 +273,7 @@ public class VentanaPrincipal extends JFrame {
          * - tamaño: tamaño en puntos (14, 16, 24, etc.)
          */
         lblTitulo.setFont(new Font("Arial", Font.BOLD, 24));
+        lblTitulo.setForeground(COLOR_PRIMARIO);
 
         /*
          * setAlignmentX(): Alinea el componente horizontalmente.
@@ -273,6 +284,7 @@ public class VentanaPrincipal extends JFrame {
         // -------- Panel de búsqueda --------
 
         JPanel panelBusqueda = new JPanel(new FlowLayout(FlowLayout.LEFT));
+        panelBusqueda.setBackground(COLOR_FONDO);
 
         /*
          * FlowLayout: Organiza componentes en una línea, pasando
@@ -297,6 +309,9 @@ public class VentanaPrincipal extends JFrame {
          * El texto del constructor aparece en el botón.
          */
         JButton btnBuscar = new JButton("Buscar");
+        btnBuscar.setBackground(COLOR_SECUNDARIO);
+        btnBuscar.setForeground(COLOR_TEXTO);
+        btnBuscar.setFont(new Font("Arial", Font.BOLD, 12));
 
         /*
          * JCheckBox: Casilla de verificación (check/uncheck).
@@ -304,6 +319,7 @@ public class VentanaPrincipal extends JFrame {
          * Útil para opciones de sí/no, activar/desactivar.
          */
         chkSoloActivos = new JCheckBox("Solo activos");
+        chkSoloActivos.setBackground(COLOR_FONDO);
         chkSoloActivos.setSelected(false); // Por defecto no está marcado
 
         // Agregamos los componentes al panel de búsqueda
@@ -365,6 +381,7 @@ public class VentanaPrincipal extends JFrame {
      */
     private JPanel crearPanelTabla() {
         JPanel panel = new JPanel(new BorderLayout());
+        panel.setBackground(COLOR_FONDO);
         panel.setBorder(BorderFactory.createEmptyBorder(5, 15, 5, 15));
 
         // -------- Definir columnas de la tabla --------
@@ -444,6 +461,10 @@ public class VentanaPrincipal extends JFrame {
          * setFont(): Cambia la fuente del encabezado.
          */
         tablaProveedores.getTableHeader().setFont(new Font("Arial", Font.BOLD, 12));
+        tablaProveedores.getTableHeader().setBackground(COLOR_PRIMARIO);
+        tablaProveedores.getTableHeader().setForeground(COLOR_TEXTO);
+        tablaProveedores.setSelectionBackground(COLOR_SECUNDARIO);
+        tablaProveedores.setSelectionForeground(COLOR_TEXTO);
 
         // Configurar ancho de columnas
         configurarAnchoColumnas();
@@ -457,6 +478,7 @@ public class VentanaPrincipal extends JFrame {
          * aparecerá una barra de desplazamiento vertical.
          */
         JScrollPane scrollPane = new JScrollPane(tablaProveedores);
+        scrollPane.getViewport().setBackground(Color.WHITE);
 
         /*
          * Agregamos el scroll pane al centro del panel.
@@ -497,6 +519,7 @@ public class VentanaPrincipal extends JFrame {
          * entre componentes.
          */
         JPanel panel = new JPanel(new FlowLayout(FlowLayout.CENTER, 20, 10));
+        panel.setBackground(COLOR_FONDO);
         panel.setBorder(BorderFactory.createEmptyBorder(5, 15, 15, 15));
 
         // Creamos los botones
@@ -514,6 +537,12 @@ public class VentanaPrincipal extends JFrame {
         btnEditar.setPreferredSize(tamBoton);
         btnEliminar.setPreferredSize(tamBoton);
         btnRefrescar.setPreferredSize(tamBoton);
+
+        // Estilizar botones
+        estilizarBoton(btnNuevo);
+        estilizarBoton(btnEditar);
+        estilizarBoton(btnEliminar);
+        estilizarBoton(btnRefrescar);
 
         // Agregamos los eventos
         btnNuevo.addActionListener(e -> abrirFormularioNuevo());
@@ -780,5 +809,19 @@ public class VentanaPrincipal extends JFrame {
      */
     public ProveedorService getServicio() {
         return servicio;
+    }
+
+    /**
+     * Aplica el estilo visual a un botón.
+     */
+    private void estilizarBoton(JButton btn) {
+        btn.setBackground(COLOR_PRIMARIO);
+        btn.setForeground(COLOR_TEXTO);
+        btn.setFont(new Font("Arial", Font.BOLD, 14));
+        btn.setFocusPainted(false);
+        btn.setBorder(BorderFactory.createEmptyBorder(5, 15, 5, 15));
+
+        // Efecto hover simple (opcional, requiere MouseListener más complejo,
+        // pero por defecto Swing ya maneja algo de feedback)
     }
 }
