@@ -82,6 +82,7 @@ bash ejecutar.sh
 - ✅ Colores semánticos (rojo=pendiente, verde=pagado)
 - ✅ Proveedores destacados en morado
 - ✅ Letras grandes y legibles
+- ✅ Icono personalizado de la aplicación
 
 ---
 

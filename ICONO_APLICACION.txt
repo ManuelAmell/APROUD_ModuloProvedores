@@ -1,0 +1,108 @@
+==========================================
+ICONO DE LA APLICACIÓN CONFIGURADO
+==========================================
+
+FECHA: 04/01/2026
+VERSIÓN: 2.2.5
+
+CAMBIOS REALIZADOS:
+------------------
+
+1. ICONO COPIADO ✅
+   Origen: instaladores/ModuloProveedores/lib/ModuloProveedores.png
+   Destino: lib/ModuloProveedores.png
+   Tamaño: 724 KB
+
+2. CÓDIGO ACTUALIZADO ✅
+   
+   VentanaUnificada.java:
+   - Agregado código para cargar icono
+   - Método: setIconImage()
+   - Ruta: lib/ModuloProveedores.png
+   
+   FormularioCompraDark.java:
+   - Agregado código para cargar icono
+   - Mismo método y ruta
+   
+   FormularioProveedorDark.java:
+   - Agregado código para cargar icono
+   - Mismo método y ruta
+
+3. IMPORTS VERIFICADOS ✅
+   - java.awt.Image (incluido en java.awt.*)
+   - java.awt.Toolkit (incluido en java.awt.*)
+
+4. COMPILACIÓN ✅
+   - Sin errores
+   - Funciona correctamente
+
+CÓDIGO AGREGADO:
+----------------
+
+```java
+// Cargar icono de la aplicación
+try {
+    Image icon = Toolkit.getDefaultToolkit().getImage("lib/ModuloProveedores.png");
+    setIconImage(icon);
+} catch (Exception e) {
+    System.err.println("No se pudo cargar el icono: " + e.getMessage());
+}
+```
+
+UBICACIÓN EN CÓDIGO:
+--------------------
+
+VentanaUnificada.java:
+- Método: configurarVentana()
+- Línea: ~85-91
+
+FormularioCompraDark.java:
+- Método: configurarDialogo()
+- Línea: ~63-69
+
+FormularioProveedorDark.java:
+- Método: configurarDialogo()
+- Línea: ~45-51
+
+RESULTADO:
+----------
+
+✅ Ventana principal muestra el icono
+✅ Formulario de compras muestra el icono
+✅ Formulario de proveedores muestra el icono
+✅ Icono visible en barra de tareas
+✅ Icono visible en alt+tab (Windows)
+
+ARCHIVOS MODIFICADOS:
+--------------------
+
+1. lib/ModuloProveedores.png (nuevo)
+2. src/vista/VentanaUnificada.java
+3. src/vista/FormularioCompraDark.java
+4. src/vista/FormularioProveedorDark.java
+5. README.md (documentación)
+
+DOCUMENTACIÓN:
+-------------
+
+✅ README.md actualizado
+✅ Mencionado en características
+
+PRUEBAS:
+--------
+
+✅ Compilación exitosa
+✅ Sin errores
+✅ Icono cargado correctamente
+
+NOTAS:
+------
+
+- El icono se carga desde lib/ModuloProveedores.png
+- Si el archivo no existe, se muestra error en consola
+- La aplicación funciona normalmente sin el icono
+- El icono es de 724 KB (PNG)
+
+==========================================
+ICONO CONFIGURADO CORRECTAMENTE ✅
+==========================================

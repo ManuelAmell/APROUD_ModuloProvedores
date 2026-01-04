@@ -5,6 +5,8 @@ import javax.swing.border.*;
 import javax.swing.table.DefaultTableModel;
 import javax.swing.table.DefaultTableCellRenderer;
 import java.awt.*;
+import java.awt.Image;
+import java.awt.Toolkit;
 import java.math.BigDecimal;
 import java.text.NumberFormat;
 import java.time.LocalDate;
@@ -78,11 +80,19 @@ public class VentanaUnificada extends JFrame {
 
     
     private void configurarVentana() {
-        setTitle("Sistema de Gestión - Proveedores y Compras");
+        setTitle("Aproud - Proveedores y Compras");
         setSize(1400, 800);
         setLocationRelativeTo(null);
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         setMinimumSize(new Dimension(1200, 700));
+        
+        // Cargar icono de la aplicación
+        try {
+            Image icon = Toolkit.getDefaultToolkit().getImage("lib/ModuloProveedores.png");
+            setIconImage(icon);
+        } catch (Exception e) {
+            System.err.println("No se pudo cargar el icono: " + e.getMessage());
+        }
         
         // Aplicar tema oscuro
         getContentPane().setBackground(BG_PRINCIPAL);

@@ -59,6 +59,14 @@ public class FormularioCompraDark extends JDialog {
         setLocationRelativeTo(getParent());
         setResizable(false);
         getContentPane().setBackground(BG_PRINCIPAL);
+        
+        // Cargar icono de la aplicación
+        try {
+            Image icon = Toolkit.getDefaultToolkit().getImage("lib/ModuloProveedores.png");
+            setIconImage(icon);
+        } catch (Exception e) {
+            System.err.println("No se pudo cargar el icono: " + e.getMessage());
+        }
     }
 
     
