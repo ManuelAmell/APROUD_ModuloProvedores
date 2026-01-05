@@ -126,27 +126,58 @@ La interfaz está dividida en 3 secciones:
 2. Clic en **"+ Nueva Compra"**
 3. Llenar el formulario:
 
-**Campos Obligatorios:**
-- **Nº Factura:** Número de la factura
-- **Categoría:** Seleccionar o crear nueva (escribir "otros")
-- **Descripción:** Detalle de la compra
-- **Total:** Monto total (formato: 1.000.000)
-- **Fecha Compra:** Formato dd/mm/aa (ej: 03/01/26)
-- **Forma de Pago:** Efectivo, Transferencia o Crédito
+**Datos Generales:**
+- **Nº Factura:** Número de la factura *
+- **Fecha Compra:** Formato dd/mm/aa (ej: 03/01/26) *
+- **Categoría:** Seleccionar o crear nueva (escribir "otros") *
 
-**Campos Opcionales:**
-- **Cantidad:** Número de unidades
-- **Precio Unitario:** Precio por unidad (formato: 100.000)
+**Opción 1: Compra Simple (sin items)**
+1. Dejar desmarcado "☐ Inscribir productos"
+2. Al guardar, se pedirá:
+   - Descripción de la compra
+   - Total de la compra
 
-4. **Para Efectivo/Transferencia:**
+**Opción 2: Compra con Items (múltiples productos)**
+1. Marcar **☑ Inscribir productos**
+2. Se mostrará la sección de items
+
+**Agregar Items:**
+   - **Cant:** Cantidad de unidades
+   - **Descripción:** Nombre del producto (ej: Arroz 50kg)
+   - **Código:** Código del producto (opcional)
+   - **Precio:** Precio unitario (formato: 10.000)
+   - Clic en **"+ Agregar Item"**
+
+**Gestionar Items:**
+   - Los items aparecen en la tabla con líneas visibles
+   - Para eliminar: seleccionar item y clic en **"- Eliminar Item"**
+   - El **TOTAL** se calcula automáticamente sumando subtotales
+
+**Ejemplo de Items:**
+   ```
+   Cant  Descripción      Código    P.Unit      Subtotal
+   ────  ──────────────   ──────    ─────────   ─────────
+   2     Arroz 50kg       A-001     $50.000     $100.000
+   5     Aceite 1L        A-002     $12.000     $ 60.000
+   10    Azúcar 1kg       A-003     $ 3.500     $ 35.000
+                                    ─────────────────────
+                                    TOTAL:      $195.000
+   ```
+
+**Forma de Pago:**
+- **Forma de Pago:** Efectivo, Transferencia o Crédito *
+
+3. **Para Efectivo/Transferencia:**
    - Marcar ☑ "Marcar como pagado" si ya está pagado
    - Ingresar fecha de pago
 
-5. **Para Crédito:**
+4. **Para Crédito:**
    - Seleccionar estado: Pendiente o Pagado
    - Si está pagado, ingresar fecha de pago
 
-6. Clic en **"Guardar"**
+5. Clic en **"Guardar"**
+
+**Nota:** Si activa "Inscribir productos", debe agregar al menos un item.
 
 #### Formato de Números
 Los campos numéricos se formatean automáticamente:
@@ -157,7 +188,8 @@ Los campos numéricos se formatean automáticamente:
 #### Editar Compra
 1. Seleccionar compra de la tabla
 2. Clic en **"✎ Editar"**
-3. Modificar campos necesarios
+3. Modificar items (agregar, eliminar o cambiar)
+4. El total se recalcula automáticamente
 4. Clic en **"Guardar"**
 
 #### Marcar como Pagado

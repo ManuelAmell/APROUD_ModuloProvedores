@@ -82,6 +82,26 @@ monitorear.bat
 
 ---
 
+### actualizar_bd_items.bat
+**Propósito:** Actualizar base de datos con tabla de items
+
+**Uso:**
+```cmd
+actualizar_bd_items.bat
+```
+
+**Qué hace:**
+1. Ejecuta script SQL `db/update_items_compra.sql`
+2. Crea tabla `items_compra`
+3. Verifica resultado de la operación
+
+**Cuándo usar:**
+- Primera vez que se usa el sistema de items
+- Después de actualizar a versión 2.3.0+
+- Solo se ejecuta una vez
+
+---
+
 ## 🐧 Linux
 
 ### compilar.sh
@@ -191,6 +211,26 @@ bash setup_database.sh
 
 ---
 
+### actualizar_bd_items.sh
+**Propósito:** Actualizar base de datos con tabla de items
+
+**Uso:**
+```bash
+bash actualizar_bd_items.sh
+```
+
+**Qué hace:**
+1. Ejecuta script SQL `db/update_items_compra.sql`
+2. Crea tabla `items_compra`
+3. Verifica resultado de la operación
+
+**Cuándo usar:**
+- Primera vez que se usa el sistema de items
+- Después de actualizar a versión 2.3.0+
+- Solo se ejecuta una vez
+
+---
+
 ## 📊 Comparación
 
 | Característica | Windows | Linux |
@@ -199,6 +239,7 @@ bash setup_database.sh
 | Ejecutar | `ejecutar.bat` | `ejecutar.sh` |
 | Monitorear | `monitorear.bat` | `monitorear.sh` |
 | Setup BD | Manual | `setup_database.sh` |
+| Actualizar BD Items | `actualizar_bd_items.bat` | `actualizar_bd_items.sh` |
 | Colores | No | Sí |
 | Pausas | Sí | No |
 | Estadísticas | Básicas | Avanzadas |
@@ -213,10 +254,13 @@ bash setup_database.sh
 REM 1. Configurar base de datos
 mysql -u root -p < db\schema.sql
 
-REM 2. Compilar (si es necesario)
+REM 2. Actualizar BD con tabla de items (v2.3.0+)
+actualizar_bd_items.bat
+
+REM 3. Compilar (si es necesario)
 compilar.bat
 
-REM 3. Ejecutar
+REM 4. Ejecutar
 ejecutar.bat
 ```
 
@@ -226,10 +270,13 @@ ejecutar.bat
 # 1. Configurar base de datos
 bash setup_database.sh
 
-# 2. Compilar
+# 2. Actualizar BD con tabla de items (v2.3.0+)
+bash actualizar_bd_items.sh
+
+# 3. Compilar
 bash compilar.sh
 
-# 3. Ejecutar
+# 4. Ejecutar
 bash ejecutar.sh
 ```
 
@@ -308,10 +355,12 @@ echo "Haciendo algo..."
 
 - [x] compilar.bat (Windows)
 - [x] ejecutar.bat (Windows)
-- [x] monitorear.bat (Windows) - Nuevo
+- [x] monitorear.bat (Windows)
+- [x] actualizar_bd_items.bat (Windows) - Nuevo
 - [x] compilar.sh (Linux)
 - [x] ejecutar.sh (Linux)
-- [x] monitorear.sh (Linux) - Nuevo
+- [x] monitorear.sh (Linux)
+- [x] actualizar_bd_items.sh (Linux) - Nuevo
 - [x] setup_database.sh (Linux)
 - [ ] setup_database.bat (Windows) - Pendiente
 

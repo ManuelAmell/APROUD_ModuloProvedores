@@ -17,6 +17,7 @@ import java.util.Locale;
 import modelo.*;
 import servicio.CompraService;
 import servicio.ProveedorService;
+import util.GeneradorFacturaMarkdown;
 
 /**
  * Ventana unificada con tema oscuro estilo VS Code.
@@ -68,6 +69,11 @@ public class VentanaUnificada extends JFrame {
     private JTextField txtFiltroFechaDesde;
     private JTextField txtFiltroFechaHasta;
     
+    // Componentes de UI adicionales
+    private JLabel lblReloj;
+    private JLabel lblVersion;
+    private javax.swing.Timer timerReloj;
+    
     public VentanaUnificada() {
         this.proveedorService = new ProveedorService();
         this.compraService = new CompraService();
@@ -86,6 +92,16 @@ public class VentanaUnificada extends JFrame {
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         setMinimumSize(new Dimension(1200, 700));
         
+        // Detener el timer al cerrar la ventana
+        addWindowListener(new java.awt.event.WindowAdapter() {
+            @Override
+            public void windowClosing(java.awt.event.WindowEvent e) {
+                if (timerReloj != null) {
+                    timerReloj.stop();
+                }
+            }
+        });
+        
         // Cargar icono de la aplicación
         try {
             Image icon = Toolkit.getDefaultToolkit().getImage("lib/ModuloProveedores.png");
@@ -101,14 +117,62 @@ public class VentanaUnificada extends JFrame {
     private void inicializarComponentes() {
         setLayout(new BorderLayout(0, 0));
         
+        // Panel superior (reloj)
+        add(crearPanelSuperior(), BorderLayout.NORTH);
+        
         // Panel lateral izquierdo (proveedores)
         add(crearPanelProveedores(), BorderLayout.WEST);
         
         // Panel central (compras y detalles)
         add(crearPanelCentral(), BorderLayout.CENTER);
         
-        // Panel inferior (estadísticas)
+        // Panel inferior (estadísticas y versión)
         add(crearPanelEstadisticas(), BorderLayout.SOUTH);
+        
+        // Iniciar reloj
+        iniciarReloj();
+    }
+
+    
+    private JPanel crearPanelSuperior() {
+        JPanel panel = new JPanel(new BorderLayout());
+        panel.setBackground(BG_PRINCIPAL);
+        panel.setBorder(BorderFactory.createCompoundBorder(
+            BorderFactory.createMatteBorder(0, 0, 1, 0, BORDE),
+            BorderFactory.createEmptyBorder(10, 20, 10, 20)
+        ));
+        
+        // Título a la izquierda
+        JLabel lblTitulo = new JLabel("Sistema de Gestión - Proveedores y Compras");
+        lblTitulo.setForeground(ACENTO);
+        lblTitulo.setFont(new Font("Segoe UI", Font.BOLD, 16));
+        
+        // Reloj a la derecha
+        lblReloj = new JLabel();
+        lblReloj.setForeground(ACENTO);
+        lblReloj.setFont(new Font("Segoe UI", Font.BOLD, 16));
+        lblReloj.setHorizontalAlignment(JLabel.RIGHT);
+        
+        panel.add(lblTitulo, BorderLayout.WEST);
+        panel.add(lblReloj, BorderLayout.EAST);
+        
+        return panel;
+    }
+    
+    private void iniciarReloj() {
+        // Actualizar hora inmediatamente
+        actualizarHora();
+        
+        // Actualizar cada segundo
+        timerReloj = new javax.swing.Timer(1000, e -> actualizarHora());
+        timerReloj.start();
+    }
+    
+    private void actualizarHora() {
+        java.time.LocalDateTime ahora = java.time.LocalDateTime.now();
+        java.time.format.DateTimeFormatter formatter = 
+            java.time.format.DateTimeFormatter.ofPattern("HH:mm:ss - dd/MM/yyyy");
+        lblReloj.setText(ahora.format(formatter));
     }
 
     
@@ -258,14 +322,17 @@ public class VentanaUnificada extends JFrame {
         JButton btnNuevaCompra = crearBoton("+ Nueva Compra", CREDITO_PAGADO);
         JButton btnEditarCompra = crearBoton("✎ Editar", BG_INPUT);
         JButton btnMarcarPagado = crearBoton("✓ Marcar Pagado", ADVERTENCIA);
+        JButton btnVerCompra = crearBoton("👁 Ver", ACENTO);
         
         btnNuevaCompra.addActionListener(e -> nuevaCompra());
         btnEditarCompra.addActionListener(e -> editarCompra());
         btnMarcarPagado.addActionListener(e -> marcarComoPagado());
+        btnVerCompra.addActionListener(e -> verCompraSeleccionada());
         
         panelAcciones.add(btnNuevaCompra);
         panelAcciones.add(btnEditarCompra);
         panelAcciones.add(btnMarcarPagado);
+        panelAcciones.add(btnVerCompra);
         
         panelSuperior.add(panelInfo, BorderLayout.WEST);
         panelSuperior.add(panelAcciones, BorderLayout.EAST);
@@ -635,20 +702,32 @@ public class VentanaUnificada extends JFrame {
 
     
     private JPanel crearPanelEstadisticas() {
-        JPanel panel = new JPanel(new FlowLayout(FlowLayout.CENTER, 40, 0));
-        panel.setBackground(BG_PANEL);
-        panel.setBorder(BorderFactory.createCompoundBorder(
+        JPanel panelContenedor = new JPanel(new BorderLayout());
+        panelContenedor.setBackground(BG_PANEL);
+        panelContenedor.setBorder(BorderFactory.createCompoundBorder(
             BorderFactory.createMatteBorder(1, 0, 0, 0, BORDE),
             BorderFactory.createEmptyBorder(12, 20, 12, 20)
         ));
         
+        // Panel central con estadísticas
+        JPanel panelEstadisticas = new JPanel(new FlowLayout(FlowLayout.CENTER, 40, 0));
+        panelEstadisticas.setBackground(BG_PANEL);
+        
         lblTotalGeneral = crearLabelEstadistica("Total General: $0", TEXTO_PRINCIPAL);
         lblCreditosPendientes = crearLabelEstadistica("Pendientes: $0", CREDITO_PENDIENTE);
         
-        panel.add(lblTotalGeneral);
-        panel.add(lblCreditosPendientes);
+        panelEstadisticas.add(lblTotalGeneral);
+        panelEstadisticas.add(lblCreditosPendientes);
         
-        return panel;
+        // Label de versión a la izquierda
+        lblVersion = new JLabel("v2.3.0");
+        lblVersion.setFont(new Font("Segoe UI", Font.PLAIN, 11));
+        lblVersion.setForeground(TEXTO_SECUNDARIO);
+        
+        panelContenedor.add(lblVersion, BorderLayout.WEST);
+        panelContenedor.add(panelEstadisticas, BorderLayout.CENTER);
+        
+        return panelContenedor;
     }
     
     private JLabel crearLabelEstadistica(String texto, Color color) {
@@ -852,7 +931,7 @@ public class VentanaUnificada extends JFrame {
             return;
         }
         
-        FormularioCompraDark formulario = new FormularioCompraDark(this, null, proveedorActual);
+        FormularioCompraDarkConItems formulario = new FormularioCompraDarkConItems(this, null, proveedorActual);
         formulario.setVisible(true);
         cargarComprasProveedor();
         actualizarTotalProveedor();
@@ -875,11 +954,15 @@ public class VentanaUnificada extends JFrame {
             .orElse(null);
         
         if (compraSeleccionada != null) {
-            FormularioCompraDark formulario = new FormularioCompraDark(this, compraSeleccionada, proveedorActual);
+            FormularioCompraDarkConItems formulario = new FormularioCompraDarkConItems(this, compraSeleccionada, proveedorActual);
             formulario.setVisible(true);
+            
+            // Actualizar todas las vistas después de editar
             cargarComprasProveedor();
             actualizarTotalProveedor();
-            actualizarEstadisticasGenerales();  // Agregar actualización de estadísticas
+            actualizarEstadisticasGenerales();
+            
+            System.out.println("Tabla de compras actualizada después de editar");
         }
     }
     
@@ -981,6 +1064,70 @@ public class VentanaUnificada extends JFrame {
     
     public CompraService getCompraService() {
         return compraService;
+    }
+    
+    private void verCompraSeleccionada() {
+        int filaSeleccionada = tablaCompras.getSelectedRow();
+        if (filaSeleccionada == -1) {
+            JOptionPane.showMessageDialog(this, 
+                "Seleccione una compra para ver", 
+                "Aviso", JOptionPane.WARNING_MESSAGE);
+            return;
+        }
+        
+        // Obtener el número de factura de la fila seleccionada (columna 0 es "Factura")
+        String numeroFactura = (String) modeloTablaCompras.getValueAt(filaSeleccionada, 0);
+        
+        // Buscar la compra por número de factura y proveedor
+        List<Compra> compras = compraService.obtenerComprasPorProveedor(proveedorActual.getId());
+        Compra compraSeleccionada = null;
+        
+        for (Compra c : compras) {
+            if (c.getNumeroFactura().equals(numeroFactura)) {
+                compraSeleccionada = c;
+                break;
+            }
+        }
+        
+        if (compraSeleccionada == null) {
+            JOptionPane.showMessageDialog(this,
+                "No se encontró la compra seleccionada",
+                "Error",
+                JOptionPane.ERROR_MESSAGE);
+            return;
+        }
+        
+        // Obtener los items de la compra
+        List<modelo.ItemCompra> items = compraService.obtenerItemsDeCompra(compraSeleccionada.getId());
+        
+        if (items == null || items.isEmpty()) {
+            JOptionPane.showMessageDialog(this,
+                "⚠ COMPRA VACÍA\n\n" +
+                "Esta compra no tiene productos registrados.\n\n" +
+                "Detalles de la compra:\n" +
+                "• Factura: " + numeroFactura + "\n" +
+                "• Proveedor: " + proveedorActual.getNombre() + "\n" +
+                "• Descripción: " + compraSeleccionada.getDescripcion() + "\n" +
+                "• Total: " + String.format("$%,d", compraSeleccionada.getTotal().longValue()).replace(",", "."),
+                "Compra sin productos",
+                JOptionPane.INFORMATION_MESSAGE);
+            return;
+        }
+        
+        // Mostrar diálogo con los items (solo lectura)
+        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("dd/MM/yy");
+        String fecha = compraSeleccionada.getFechaCompra().format(formatter);
+        
+        DialogoItems dialogo = new DialogoItems(
+            null,  // parent
+            items,
+            proveedorActual.getNombre(),
+            numeroFactura,
+            fecha,
+            true  // soloLectura = true
+        );
+        
+        dialogo.setVisible(true);
     }
     
     private void agregarPlaceholder(JTextField textField, String placeholder) {

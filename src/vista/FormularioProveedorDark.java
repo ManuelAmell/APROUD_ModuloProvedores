@@ -39,7 +39,7 @@ public class FormularioProveedorDark extends JDialog {
     private void configurarDialogo() {
         setSize(550, 600);
         setLocationRelativeTo(getParent());
-        setResizable(false);
+        setResizable(true); // Permitir maximizar
         getContentPane().setBackground(BG_PRINCIPAL);
         
         // Cargar icono de la aplicación

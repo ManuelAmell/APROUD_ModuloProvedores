@@ -1,10 +1,12 @@
 package vista;
 
 import javax.swing.*;
+import javax.swing.table.DefaultTableModel;
 import java.awt.*;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
+import java.util.ArrayList;
 import java.util.List;
 
 import modelo.*;
@@ -12,7 +14,7 @@ import servicio.CompraService;
 import servicio.CategoriaService;
 import util.CampoNumericoFormateado;
 
-public class FormularioCompraDark extends JDialog {
+public class FormularioCompraDarkConItems extends JDialog {
     
     // Tema oscuro
     private final Color BG_PRINCIPAL = new Color(30, 30, 30);
@@ -23,28 +25,35 @@ public class FormularioCompraDark extends JDialog {
     private final Color ACENTO = new Color(0, 122, 204);
     private final Color ADVERTENCIA = new Color(255, 193, 7);
     private final Color MORADO = new Color(156, 39, 176);
+    private final Color VERDE = new Color(76, 175, 80);
+    private final Color ROJO = new Color(244, 67, 54);
     
     private final CompraService compraService;
     private final CategoriaService categoriaService;
     private Compra compraActual;
     private Proveedor proveedor;
     
-    private JTextField txtFactura, txtCantidad, txtFechaCompra, txtFechaPago, txtInfoPago, txtCategoriaPersonalizada;
-    private CampoNumericoFormateado txtPrecioUnit, txtTotal;
+    // Campos del formulario
+    private JTextField txtFactura, txtFechaCompra, txtFechaPago, txtInfoPago, txtCategoriaPersonalizada;
     private JTextArea txtDescripcion;
     private JComboBox<String> cmbCategoria;
     private JComboBox<FormaPago> cmbFormaPago;
     private JComboBox<EstadoCredito> cmbEstadoCredito;
-    private JCheckBox chkPagado;  // Nuevo checkbox para marcar como pagado
-    private JLabel lblEstadoCredito, lblFechaPago, lblInfoPago, lblCategoriaPersonalizada;
+    private JCheckBox chkPagado;
+    private JButton btnInscribirProductos;
+    private JLabel lblEstadoCredito, lblFechaPago, lblInfoPago, lblCategoriaPersonalizada, lblTotalCalculado;
     
-    public FormularioCompraDark(VentanaUnificada padre, Compra compra, Proveedor proveedor) {
+    // Items
+    private List<ItemCompra> listaItems;
+    
+    public FormularioCompraDarkConItems(VentanaUnificada padre, Compra compra, Proveedor proveedor) {
         super(padre, compra == null ? "Nueva Compra" : "Editar Compra", true);
         
         this.compraService = padre.getCompraService();
         this.categoriaService = new CategoriaService();
         this.compraActual = compra;
         this.proveedor = proveedor;
+        this.listaItems = new ArrayList<>();
         
         configurarDialogo();
         inicializarComponentes();
@@ -55,7 +64,7 @@ public class FormularioCompraDark extends JDialog {
     }
     
     private void configurarDialogo() {
-        setSize(600, 750);
+        setSize(800, 600);
         setLocationRelativeTo(getParent());
         setResizable(true); // Permitir maximizar
         getContentPane().setBackground(BG_PRINCIPAL);
@@ -73,35 +82,73 @@ public class FormularioCompraDark extends JDialog {
     private void inicializarComponentes() {
         setLayout(new BorderLayout(0, 0));
         
-        JPanel panelCampos = new JPanel();
-        panelCampos.setLayout(new BoxLayout(panelCampos, BoxLayout.Y_AXIS));
-        panelCampos.setBackground(BG_PRINCIPAL);
-        panelCampos.setBorder(BorderFactory.createEmptyBorder(20, 30, 20, 30));
+        JPanel panelPrincipal = new JPanel();
+        panelPrincipal.setLayout(new BoxLayout(panelPrincipal, BoxLayout.Y_AXIS));
+        panelPrincipal.setBackground(BG_PRINCIPAL);
+        panelPrincipal.setBorder(BorderFactory.createEmptyBorder(20, 30, 20, 30));
         
+        // ===== SECCIÓN 1: Datos Generales =====
+        agregarSeccionDatosGenerales(panelPrincipal);
+        
+        panelPrincipal.add(Box.createVerticalStrut(15));
+        
+        // ===== SECCIÓN 2: Items de la Compra =====
+        agregarSeccionItems(panelPrincipal);
+        
+        panelPrincipal.add(Box.createVerticalStrut(15));
+        
+        // ===== SECCIÓN 3: Forma de Pago =====
+        agregarSeccionFormaPago(panelPrincipal);
+        
+        // Botones
+        JPanel panelBotones = new JPanel(new FlowLayout(FlowLayout.CENTER, 15, 15));
+        panelBotones.setBackground(BG_PRINCIPAL);
+        
+        JButton btnGuardar = crearBoton("Guardar", VERDE);
+        JButton btnCancelar = crearBoton("Cancelar", BG_INPUT);
+        
+        btnGuardar.addActionListener(e -> guardar());
+        btnCancelar.addActionListener(e -> dispose());
+        
+        panelBotones.add(btnCancelar);
+        panelBotones.add(btnGuardar);
+        
+        JScrollPane scroll = new JScrollPane(panelPrincipal);
+        scroll.setBorder(null);
+        scroll.getViewport().setBackground(BG_PRINCIPAL);
+        scroll.getVerticalScrollBar().setUnitIncrement(16);
+        
+        add(scroll, BorderLayout.CENTER);
+        add(panelBotones, BorderLayout.SOUTH);
+    }
+    
+    private void agregarSeccionDatosGenerales(JPanel panel) {
         // Proveedor (solo lectura)
         JLabel lblProveedor = crearLabel("Proveedor", true);
         JLabel lblProveedorNombre = new JLabel(proveedor.getNombre());
-        lblProveedorNombre.setForeground(ACENTO);
-        lblProveedorNombre.setFont(new Font("Segoe UI", Font.BOLD, 14));
+        lblProveedorNombre.setForeground(MORADO);
+        lblProveedorNombre.setFont(new Font("Segoe UI", Font.BOLD, 16));
         lblProveedorNombre.setAlignmentX(Component.LEFT_ALIGNMENT);
-        panelCampos.add(lblProveedor);
-        panelCampos.add(lblProveedorNombre);
-        panelCampos.add(Box.createVerticalStrut(10));
+        panel.add(lblProveedor);
+        panel.add(lblProveedorNombre);
+        panel.add(Box.createVerticalStrut(10));
         
-        txtFactura = agregarCampo(panelCampos, "Nº Factura *", true);
+        txtFactura = agregarCampo(panel, "Nº Factura *", true);
+        txtFechaCompra = agregarCampo(panel, "Fecha Compra (dd/mm/aa) *", true);
+        txtFechaCompra.setText(LocalDate.now().format(DateTimeFormatter.ofPattern("dd/MM/yy")));
+        txtFechaCompra.setToolTipText("Formato: dd/mm/aa (ej: 03/01/26)");
         
         // Categoría con opción "otros"
-        panelCampos.add(crearLabel("Categoría *", true));
+        panel.add(crearLabel("Categoría *", true));
         cmbCategoria = new JComboBox<>();
         cmbCategoria.setBackground(BG_INPUT);
         cmbCategoria.setForeground(TEXTO_PRINCIPAL);
-        cmbCategoria.setFont(new Font("Segoe UI", Font.PLAIN, 13));
+        cmbCategoria.setFont(new Font("Segoe UI", Font.PLAIN, 14));
         cmbCategoria.setMaximumSize(new Dimension(Integer.MAX_VALUE, 35));
         cmbCategoria.setAlignmentX(Component.LEFT_ALIGNMENT);
         cmbCategoria.addActionListener(e -> actualizarCampoCategoria());
-        cargarCategorias();
-        panelCampos.add(cmbCategoria);
-        panelCampos.add(Box.createVerticalStrut(5));
+        panel.add(cmbCategoria);
+        panel.add(Box.createVerticalStrut(5));
         
         // Campo para categoría personalizada (oculto por defecto)
         lblCategoriaPersonalizada = crearLabel("Escriba la nueva categoría:", true);
@@ -109,192 +156,127 @@ public class FormularioCompraDark extends JDialog {
         txtCategoriaPersonalizada = crearTextField();
         txtCategoriaPersonalizada.setVisible(false);
         txtCategoriaPersonalizada.setToolTipText("Ejemplo: herramientas, materiales, pocillos, etc.");
-        panelCampos.add(lblCategoriaPersonalizada);
-        panelCampos.add(txtCategoriaPersonalizada);
-        panelCampos.add(Box.createVerticalStrut(5));
+        panel.add(lblCategoriaPersonalizada);
+        panel.add(txtCategoriaPersonalizada);
+        panel.add(Box.createVerticalStrut(10));
         
-        txtDescripcion = agregarTextArea(panelCampos, "Descripción *");
+        // Cargar categorías DESPUÉS de crear los componentes
+        cargarCategorias();
         
-        txtCantidad = agregarCampo(panelCampos, "Cantidad (opcional)", false);
+        // Descripción general
+        txtDescripcion = agregarTextArea(panel, "Descripción *");
+    }
+    
+    private void agregarSeccionItems(JPanel panel) {
+        // Botón para abrir diálogo de items
+        btnInscribirProductos = crearBoton("Inscribir productos", MORADO);
+        btnInscribirProductos.setAlignmentX(Component.LEFT_ALIGNMENT);
+        btnInscribirProductos.setPreferredSize(new Dimension(200, 40));
+        btnInscribirProductos.setMaximumSize(new Dimension(200, 40));
+        btnInscribirProductos.addActionListener(e -> abrirDialogoItems());
+        panel.add(btnInscribirProductos);
+        panel.add(Box.createVerticalStrut(10));
         
-        // Precio Unitario con formato numérico
-        panelCampos.add(crearLabel("Precio Unitario (opcional)", false));
-        txtPrecioUnit = new CampoNumericoFormateado("100.000");
-        txtPrecioUnit.setBackground(BG_INPUT);
-        txtPrecioUnit.setColorTexto(TEXTO_PRINCIPAL);
-        txtPrecioUnit.setColorPlaceholder(TEXTO_SECUNDARIO);
-        txtPrecioUnit.setCaretColor(TEXTO_PRINCIPAL);
-        txtPrecioUnit.setFont(new Font("Segoe UI", Font.PLAIN, 14));
-        txtPrecioUnit.setBorder(BorderFactory.createCompoundBorder(
-            BorderFactory.createLineBorder(BORDE),
-            BorderFactory.createEmptyBorder(8, 10, 8, 10)
-        ));
-        txtPrecioUnit.setMaximumSize(new Dimension(Integer.MAX_VALUE, 40));
-        txtPrecioUnit.setAlignmentX(Component.LEFT_ALIGNMENT);
-        panelCampos.add(txtPrecioUnit);
-        panelCampos.add(Box.createVerticalStrut(10));
+        // Label para mostrar total
+        lblTotalCalculado = new JLabel("");
+        lblTotalCalculado.setForeground(VERDE);
+        lblTotalCalculado.setFont(new Font("Segoe UI", Font.BOLD, 16));
+        lblTotalCalculado.setAlignmentX(Component.LEFT_ALIGNMENT);
+        lblTotalCalculado.setVisible(false);
+        panel.add(lblTotalCalculado);
+    }
+    
+    private void abrirDialogoItems() {
+        // Obtener datos actuales del formulario
+        String proveedorNombre = proveedor.getNombre();
+        String facturaNumero = txtFactura.getText().trim();
+        String fechaTexto = txtFechaCompra.getText().trim();
         
-        // Total con formato numérico
-        panelCampos.add(crearLabel("Total *", true));
-        txtTotal = new CampoNumericoFormateado("1.000.000");
-        txtTotal.setBackground(BG_INPUT);
-        txtTotal.setColorTexto(TEXTO_PRINCIPAL);
-        txtTotal.setColorPlaceholder(TEXTO_SECUNDARIO);
-        txtTotal.setCaretColor(TEXTO_PRINCIPAL);
-        txtTotal.setFont(new Font("Segoe UI", Font.PLAIN, 14));
-        txtTotal.setBorder(BorderFactory.createCompoundBorder(
-            BorderFactory.createLineBorder(BORDE),
-            BorderFactory.createEmptyBorder(8, 10, 8, 10)
-        ));
-        txtTotal.setMaximumSize(new Dimension(Integer.MAX_VALUE, 40));
-        txtTotal.setAlignmentX(Component.LEFT_ALIGNMENT);
-        panelCampos.add(txtTotal);
-        panelCampos.add(Box.createVerticalStrut(10));
+        // Si no hay número de factura aún, dejar vacío para que el usuario lo ingrese
+        if (facturaNumero.isEmpty()) {
+            facturaNumero = "";
+        }
         
-        txtFechaCompra = agregarCampo(panelCampos, "Fecha Compra (dd/mm/aa) *", true);
-        txtFechaCompra.setText(LocalDate.now().format(DateTimeFormatter.ofPattern("dd/MM/yy")));
-        txtFechaCompra.setToolTipText("Formato: dd/mm/aa (ej: 03/01/26)");
-        agregarPlaceholder(txtFechaCompra, "dd/mm/aa");
+        // Si no hay fecha, usar la actual
+        if (fechaTexto.isEmpty()) {
+            fechaTexto = txtFechaCompra.getText(); // Ya tiene la fecha por defecto
+        }
         
-        cmbFormaPago = agregarCombo(panelCampos, "Forma de Pago *", FormaPago.values());
+        DialogoItems dialogo = new DialogoItems(this, listaItems, proveedorNombre, facturaNumero, fechaTexto);
+        dialogo.setVisible(true);
+        
+        if (dialogo.isAceptado()) {
+            listaItems = dialogo.getItems();
+            BigDecimal total = dialogo.getTotal();
+            
+            // Actualizar campos de fecha y factura con los valores editados en el diálogo
+            String facturaEditada = dialogo.getNumeroFactura();
+            String fechaEditada = dialogo.getFechaCompra();
+            
+            if (!facturaEditada.isEmpty()) {
+                txtFactura.setText(facturaEditada);
+            }
+            
+            if (!fechaEditada.isEmpty()) {
+                txtFechaCompra.setText(fechaEditada);
+            }
+            
+            if (!listaItems.isEmpty()) {
+                lblTotalCalculado.setText(String.format("Items: %d | TOTAL: $%,.0f", 
+                    listaItems.size(), total));
+                lblTotalCalculado.setVisible(true);
+            } else {
+                lblTotalCalculado.setVisible(false);
+            }
+        }
+    }
+
+    
+    private void agregarSeccionFormaPago(JPanel panel) {
+        // Título de sección
+        JLabel lblTitulo = new JLabel("Forma de Pago");
+        lblTitulo.setForeground(ACENTO);
+        lblTitulo.setFont(new Font("Segoe UI", Font.BOLD, 15));
+        lblTitulo.setAlignmentX(Component.LEFT_ALIGNMENT);
+        panel.add(lblTitulo);
+        panel.add(Box.createVerticalStrut(10));
+        
+        cmbFormaPago = agregarCombo(panel, "Forma de Pago *", FormaPago.values());
         cmbFormaPago.addActionListener(e -> actualizarCamposCredito());
         
         lblInfoPago = crearLabel("Info de Pago (banco, cuenta, comprobante)", false);
         txtInfoPago = crearTextField();
-        panelCampos.add(lblInfoPago);
-        panelCampos.add(txtInfoPago);
-        panelCampos.add(Box.createVerticalStrut(5));
+        panel.add(lblInfoPago);
+        panel.add(txtInfoPago);
+        panel.add(Box.createVerticalStrut(5));
         
         lblEstadoCredito = crearLabel("Estado Crédito", false);
         cmbEstadoCredito = crearComboBox(EstadoCredito.values());
         cmbEstadoCredito.addActionListener(e -> actualizarCampoFechaPago());
-        panelCampos.add(lblEstadoCredito);
-        panelCampos.add(cmbEstadoCredito);
-        panelCampos.add(Box.createVerticalStrut(5));
+        panel.add(lblEstadoCredito);
+        panel.add(cmbEstadoCredito);
+        panel.add(Box.createVerticalStrut(5));
         
         // Checkbox para marcar como pagado (para efectivo y transferencia)
         chkPagado = new JCheckBox("Marcar como pagado");
         chkPagado.setBackground(BG_PRINCIPAL);
         chkPagado.setForeground(TEXTO_PRINCIPAL);
-        chkPagado.setFont(new Font("Segoe UI", Font.PLAIN, 13));
+        chkPagado.setFont(new Font("Segoe UI", Font.PLAIN, 14));
         chkPagado.setAlignmentX(Component.LEFT_ALIGNMENT);
         chkPagado.addActionListener(e -> actualizarCampoFechaPagoPorCheckbox());
-        panelCampos.add(chkPagado);
-        panelCampos.add(Box.createVerticalStrut(5));
+        panel.add(chkPagado);
+        panel.add(Box.createVerticalStrut(5));
         
         lblFechaPago = crearLabel("Fecha de Pago (dd/mm/aa)", false);
         txtFechaPago = crearTextField();
         txtFechaPago.setToolTipText("Formato: dd/mm/aa (ej: 03/01/26)");
-        agregarPlaceholder(txtFechaPago, "dd/mm/aa");
-        panelCampos.add(lblFechaPago);
-        panelCampos.add(txtFechaPago);
+        panel.add(lblFechaPago);
+        panel.add(txtFechaPago);
         
         actualizarCamposCredito();
-        
-        JPanel panelBotones = new JPanel(new FlowLayout(FlowLayout.CENTER, 15, 15));
-        panelBotones.setBackground(BG_PRINCIPAL);
-        
-        JButton btnGuardar = crearBoton("Guardar", ACENTO);
-        JButton btnCancelar = crearBoton("Cancelar", BG_INPUT);
-        
-        btnGuardar.addActionListener(e -> guardar());
-        btnCancelar.addActionListener(e -> dispose());
-        
-        panelBotones.add(btnGuardar);
-        panelBotones.add(btnCancelar);
-        
-        JScrollPane scroll = new JScrollPane(panelCampos);
-        scroll.setBorder(null);
-        scroll.getViewport().setBackground(BG_PRINCIPAL);
-        
-        add(scroll, BorderLayout.CENTER);
-        add(panelBotones, BorderLayout.SOUTH);
-    }
-
-    
-    private JLabel crearLabel(String texto, boolean obligatorio) {
-        JLabel lbl = new JLabel(texto);
-        lbl.setForeground(obligatorio ? ACENTO : TEXTO_SECUNDARIO);
-        lbl.setFont(new Font("Segoe UI", Font.PLAIN, 12));
-        lbl.setAlignmentX(Component.LEFT_ALIGNMENT);
-        lbl.setBorder(BorderFactory.createEmptyBorder(10, 0, 5, 0));
-        return lbl;
     }
     
-    private JTextField crearTextField() {
-        JTextField txt = new JTextField();
-        txt.setBackground(BG_INPUT);
-        txt.setForeground(TEXTO_PRINCIPAL);
-        txt.setCaretColor(TEXTO_PRINCIPAL);
-        txt.setFont(new Font("Segoe UI", Font.PLAIN, 13));
-        txt.setBorder(BorderFactory.createCompoundBorder(
-            BorderFactory.createLineBorder(BORDE),
-            BorderFactory.createEmptyBorder(8, 10, 8, 10)
-        ));
-        txt.setMaximumSize(new Dimension(Integer.MAX_VALUE, 35));
-        txt.setAlignmentX(Component.LEFT_ALIGNMENT);
-        return txt;
-    }
-    
-    private JTextField agregarCampo(JPanel panel, String label, boolean obligatorio) {
-        panel.add(crearLabel(label, obligatorio));
-        JTextField txt = crearTextField();
-        panel.add(txt);
-        return txt;
-    }
-    
-    private <T> JComboBox<T> crearComboBox(T[] items) {
-        JComboBox<T> cmb = new JComboBox<>(items);
-        cmb.setBackground(BG_INPUT);
-        cmb.setForeground(TEXTO_PRINCIPAL);
-        cmb.setFont(new Font("Segoe UI", Font.PLAIN, 13));
-        cmb.setMaximumSize(new Dimension(Integer.MAX_VALUE, 35));
-        cmb.setAlignmentX(Component.LEFT_ALIGNMENT);
-        return cmb;
-    }
-    
-    private <T> JComboBox<T> agregarCombo(JPanel panel, String label, T[] items) {
-        panel.add(crearLabel(label, true));
-        JComboBox<T> cmb = crearComboBox(items);
-        panel.add(cmb);
-        return cmb;
-    }
-    
-    private JTextArea agregarTextArea(JPanel panel, String label) {
-        panel.add(crearLabel(label, true));
-        
-        JTextArea txt = new JTextArea(4, 20);
-        txt.setBackground(BG_INPUT);
-        txt.setForeground(TEXTO_PRINCIPAL);
-        txt.setCaretColor(TEXTO_PRINCIPAL);
-        txt.setFont(new Font("Segoe UI", Font.PLAIN, 13));
-        txt.setLineWrap(true);
-        txt.setWrapStyleWord(true);
-        txt.setBorder(BorderFactory.createCompoundBorder(
-            BorderFactory.createLineBorder(BORDE),
-            BorderFactory.createEmptyBorder(8, 10, 8, 10)
-        ));
-        
-        JScrollPane scroll = new JScrollPane(txt);
-        scroll.setBorder(BorderFactory.createLineBorder(BORDE));
-        scroll.setMaximumSize(new Dimension(Integer.MAX_VALUE, 100));
-        scroll.setAlignmentX(Component.LEFT_ALIGNMENT);
-        
-        panel.add(scroll);
-        return txt;
-    }
-    
-    private JButton crearBoton(String texto, Color bg) {
-        JButton btn = new JButton(texto);
-        btn.setBackground(bg);
-        btn.setForeground(Color.WHITE);
-        btn.setFont(new Font("Segoe UI", Font.PLAIN, 13));
-        btn.setFocusPainted(false);
-        btn.setBorderPainted(false);
-        btn.setCursor(new Cursor(Cursor.HAND_CURSOR));
-        btn.setPreferredSize(new Dimension(120, 35));
-        return btn;
-    }
+    // ===== MÉTODOS AUXILIARES =====
     
     private void actualizarCamposCredito() {
         FormaPago formaPago = (FormaPago) cmbFormaPago.getSelectedItem();
@@ -308,10 +290,8 @@ public class FormularioCompraDark extends JDialog {
         lblInfoPago.setVisible(esCredito || esTransferencia);
         txtInfoPago.setVisible(esCredito || esTransferencia);
         
-        // Mostrar checkbox para efectivo y transferencia
         chkPagado.setVisible(esEfectivo || esTransferencia);
         
-        // Para efectivo y transferencia, mostrar fecha de pago según checkbox
         if (esEfectivo || esTransferencia) {
             actualizarCampoFechaPagoPorCheckbox();
         } else if (!esCredito) {
@@ -336,7 +316,6 @@ public class FormularioCompraDark extends JDialog {
         lblFechaPago.setText("Fecha de Pago (dd/mm/aa) *");
         
         if (estaPagado && txtFechaPago.getText().isEmpty()) {
-            // Sugerir fecha actual solo si está marcado como pagado
             txtFechaPago.setText(LocalDate.now().format(DateTimeFormatter.ofPattern("dd/MM/yy")));
         } else if (!estaPagado) {
             txtFechaPago.setText("");
@@ -381,24 +360,19 @@ public class FormularioCompraDark extends JDialog {
             List<String> categorias = categoriaService.obtenerTodasCategorias();
             
             if (categorias == null || categorias.isEmpty()) {
-                // Si no hay categorías, agregar las predefinidas
                 cmbCategoria.addItem("zapatos");
                 cmbCategoria.addItem("pantalones");
                 cmbCategoria.addItem("ropa");
                 cmbCategoria.addItem("camisas");
                 cmbCategoria.addItem("accesorios");
                 cmbCategoria.addItem("otros");
-                System.out.println("Categorías cargadas por defecto");
             } else {
                 for (String cat : categorias) {
                     cmbCategoria.addItem(cat);
                 }
-                System.out.println("Categorías cargadas desde BD: " + categorias.size());
             }
         } catch (Exception e) {
             System.err.println("Error al cargar categorías: " + e.getMessage());
-            e.printStackTrace();
-            // Cargar categorías por defecto en caso de error
             cmbCategoria.addItem("zapatos");
             cmbCategoria.addItem("pantalones");
             cmbCategoria.addItem("ropa");
@@ -411,12 +385,13 @@ public class FormularioCompraDark extends JDialog {
     
     private void cargarDatos() {
         txtFactura.setText(compraActual.getNumeroFactura());
+        txtFechaCompra.setText(compraActual.getFechaCompra().format(DateTimeFormatter.ofPattern("dd/MM/yy")));
+        txtDescripcion.setText(compraActual.getDescripcion());
         
         // Cargar categoría
         String categoriaActual = compraActual.getCategoria();
         boolean categoriaExiste = false;
         
-        // Verificar si la categoría existe en el combo
         for (int i = 0; i < cmbCategoria.getItemCount(); i++) {
             if (cmbCategoria.getItemAt(i).equals(categoriaActual)) {
                 cmbCategoria.setSelectedIndex(i);
@@ -425,7 +400,6 @@ public class FormularioCompraDark extends JDialog {
             }
         }
         
-        // Si no existe, es una categoría personalizada
         if (!categoriaExiste) {
             cmbCategoria.setSelectedItem("otros");
             txtCategoriaPersonalizada.setText(categoriaActual);
@@ -433,18 +407,6 @@ public class FormularioCompraDark extends JDialog {
             txtCategoriaPersonalizada.setVisible(true);
         }
         
-        txtDescripcion.setText(compraActual.getDescripcion());
-        
-        if (compraActual.getCantidad() != null) {
-            txtCantidad.setText(compraActual.getCantidad().toString());
-        }
-        
-        if (compraActual.getPrecioUnitario() != null) {
-            txtPrecioUnit.setValorNumerico(compraActual.getPrecioUnitario());
-        }
-        
-        txtTotal.setValorNumerico(compraActual.getTotal());
-        txtFechaCompra.setText(compraActual.getFechaCompra().format(DateTimeFormatter.ofPattern("dd/MM/yy")));
         cmbFormaPago.setSelectedItem(compraActual.getFormaPago());
         
         if (compraActual.getEstadoCredito() != null) {
@@ -453,11 +415,23 @@ public class FormularioCompraDark extends JDialog {
         
         if (compraActual.getFechaPago() != null) {
             txtFechaPago.setText(compraActual.getFechaPago().format(DateTimeFormatter.ofPattern("dd/MM/yy")));
-            // Si tiene fecha de pago, marcar el checkbox
             if (compraActual.getFormaPago() == FormaPago.EFECTIVO || 
                 compraActual.getFormaPago() == FormaPago.TRANSFERENCIA) {
                 chkPagado.setSelected(true);
             }
+        }
+        
+        // Cargar items si existen
+        List<ItemCompra> items = compraService.obtenerItemsDeCompra(compraActual.getId());
+        if (items != null && !items.isEmpty()) {
+            listaItems = items;
+            BigDecimal total = BigDecimal.ZERO;
+            for (ItemCompra item : listaItems) {
+                total = total.add(item.getSubtotal());
+            }
+            lblTotalCalculado.setText(String.format("Items: %d | TOTAL: $%,.0f", 
+                listaItems.size(), total));
+            lblTotalCalculado.setVisible(true);
         }
         
         actualizarCamposCredito();
@@ -470,6 +444,11 @@ public class FormularioCompraDark extends JDialog {
             compra.setIdProveedor(proveedor.getId());
             compra.setNumeroFactura(txtFactura.getText().trim());
             
+            if (compra.getNumeroFactura().isEmpty()) {
+                JOptionPane.showMessageDialog(this, "El número de factura es obligatorio", "Error", JOptionPane.ERROR_MESSAGE);
+                return;
+            }
+            
             // Obtener categoría
             String categoriaSeleccionada = (String) cmbCategoria.getSelectedItem();
             String categoriaFinal = "";
@@ -479,7 +458,6 @@ public class FormularioCompraDark extends JDialog {
                 return;
             }
             
-            // Si seleccionó "otros", usar el campo de texto personalizado
             if (categoriaSeleccionada.equals("otros")) {
                 String categoriaPersonalizada = txtCategoriaPersonalizada.getText().trim();
                 if (categoriaPersonalizada.isEmpty()) {
@@ -504,34 +482,19 @@ public class FormularioCompraDark extends JDialog {
             }
             
             compra.setCategoria(categoriaFinal);
-            compra.setDescripcion(txtDescripcion.getText().trim());
             
-            String cantidadStr = txtCantidad.getText().trim();
-            if (!cantidadStr.isEmpty()) {
-                compra.setCantidad(Integer.parseInt(cantidadStr));
-            } else {
-                compra.setCantidad(null);
-            }
-            
-            // Obtener precio unitario del campo formateado
-            if (!txtPrecioUnit.estaVacio()) {
-                compra.setPrecioUnitario(txtPrecioUnit.getValorNumerico());
-            } else {
-                compra.setPrecioUnitario(null);
-            }
-            
-            // Obtener total del campo formateado
-            if (txtTotal.estaVacio()) {
-                JOptionPane.showMessageDialog(this, "El total es obligatorio", "Error", JOptionPane.ERROR_MESSAGE);
+            // Descripción general
+            String descripcion = txtDescripcion.getText().trim();
+            if (descripcion.isEmpty()) {
+                JOptionPane.showMessageDialog(this, "La descripción es obligatoria", "Error", JOptionPane.ERROR_MESSAGE);
                 return;
             }
-            compra.setTotal(txtTotal.getValorNumerico());
+            compra.setDescripcion(descripcion);
             
-            // Soportar formato dd/mm/aa y dd/MM/yyyy
+            // Fecha de compra
             DateTimeFormatter formatter = DateTimeFormatter.ofPattern("[dd/MM/yy][dd/MM/yyyy]");
             String fechaCompraStr = txtFechaCompra.getText().trim();
-            // Ignorar placeholder
-            if (fechaCompraStr.equals("dd/mm/aa")) {
+            if (fechaCompraStr.isEmpty()) {
                 JOptionPane.showMessageDialog(this, "Debe ingresar la fecha de compra", "Error", JOptionPane.ERROR_MESSAGE);
                 return;
             }
@@ -544,21 +507,18 @@ public class FormularioCompraDark extends JDialog {
                 
                 if (compra.getEstadoCredito() == EstadoCredito.PAGADO) {
                     String fechaPagoStr = txtFechaPago.getText().trim();
-                    // Ignorar placeholder
-                    if (!fechaPagoStr.isEmpty() && !fechaPagoStr.equals("dd/mm/aa")) {
+                    if (!fechaPagoStr.isEmpty()) {
                         compra.setFechaPago(LocalDate.parse(fechaPagoStr, formatter));
                     }
                 } else {
                     compra.setFechaPago(null);
                 }
             } else if (compra.getFormaPago() == FormaPago.EFECTIVO || compra.getFormaPago() == FormaPago.TRANSFERENCIA) {
-                // Para efectivo y transferencia, guardar fecha de pago según checkbox
                 compra.setEstadoCredito(null);
                 
                 if (chkPagado.isSelected()) {
-                    // Si está marcado como pagado, debe tener fecha
                     String fechaPagoStr = txtFechaPago.getText().trim();
-                    if (fechaPagoStr.isEmpty() || fechaPagoStr.equals("dd/mm/aa")) {
+                    if (fechaPagoStr.isEmpty()) {
                         JOptionPane.showMessageDialog(this, 
                             "Debe ingresar la fecha de pago si marca como pagado", 
                             "Error", JOptionPane.ERROR_MESSAGE);
@@ -566,7 +526,6 @@ public class FormularioCompraDark extends JDialog {
                     }
                     compra.setFechaPago(LocalDate.parse(fechaPagoStr, formatter));
                 } else {
-                    // Si no está marcado, dejar como pendiente (sin fecha)
                     compra.setFechaPago(null);
                 }
             } else {
@@ -574,11 +533,40 @@ public class FormularioCompraDark extends JDialog {
                 compra.setFechaPago(null);
             }
             
+            // Guardar compra con o sin items
             String resultado;
-            if (compraActual == null) {
-                resultado = compraService.registrarCompra(compra);
+            if (!listaItems.isEmpty()) {
+                // Guardar con items
+                if (compraActual == null) {
+                    resultado = compraService.guardarCompraConItems(compra, listaItems);
+                } else {
+                    resultado = compraService.actualizarCompraConItems(compra, listaItems);
+                }
             } else {
-                resultado = compraService.actualizarCompra(compra);
+                // Guardar sin items (modo simple)
+                // Pedir total
+                String totalStr = JOptionPane.showInputDialog(this, 
+                    "Ingrese el total de la compra:", 
+                    "Total", 
+                    JOptionPane.QUESTION_MESSAGE);
+                if (totalStr == null || totalStr.trim().isEmpty()) {
+                    JOptionPane.showMessageDialog(this, "El total es obligatorio", "Error", JOptionPane.ERROR_MESSAGE);
+                    return;
+                }
+                try {
+                    // Limpiar formato y convertir
+                    totalStr = totalStr.replaceAll("[^0-9,]", "").replace(",", ".");
+                    compra.setTotal(new BigDecimal(totalStr));
+                } catch (Exception ex) {
+                    JOptionPane.showMessageDialog(this, "Total inválido", "Error", JOptionPane.ERROR_MESSAGE);
+                    return;
+                }
+                
+                if (compraActual == null) {
+                    resultado = compraService.registrarCompra(compra);
+                } else {
+                    resultado = compraService.actualizarCompra(compra);
+                }
             }
             
             if (resultado.startsWith("Error")) {
@@ -588,32 +576,95 @@ public class FormularioCompraDark extends JDialog {
                 dispose();
             }
             
-        } catch (NumberFormatException e) {
-            JOptionPane.showMessageDialog(this, "Error en formato numérico", "Error", JOptionPane.ERROR_MESSAGE);
         } catch (Exception e) {
             JOptionPane.showMessageDialog(this, "Error: " + e.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
+            e.printStackTrace();
         }
     }
     
-    private void agregarPlaceholder(JTextField textField, String placeholder) {
-        textField.setForeground(TEXTO_SECUNDARIO);
+    // ===== MÉTODOS DE CREACIÓN DE COMPONENTES =====
+    
+    private JLabel crearLabel(String texto, boolean obligatorio) {
+        JLabel lbl = new JLabel(texto);
+        lbl.setForeground(obligatorio ? ACENTO : TEXTO_SECUNDARIO);
+        lbl.setFont(new Font("Segoe UI", Font.PLAIN, 13));
+        lbl.setAlignmentX(Component.LEFT_ALIGNMENT);
+        lbl.setBorder(BorderFactory.createEmptyBorder(10, 0, 5, 0));
+        return lbl;
+    }
+    
+    private JTextField crearTextField() {
+        JTextField txt = new JTextField();
+        txt.setBackground(BG_INPUT);
+        txt.setForeground(TEXTO_PRINCIPAL);
+        txt.setCaretColor(TEXTO_PRINCIPAL);
+        txt.setFont(new Font("Segoe UI", Font.PLAIN, 14));
+        txt.setBorder(BorderFactory.createCompoundBorder(
+            BorderFactory.createLineBorder(BORDE),
+            BorderFactory.createEmptyBorder(8, 10, 8, 10)
+        ));
+        txt.setMaximumSize(new Dimension(Integer.MAX_VALUE, 35));
+        txt.setAlignmentX(Component.LEFT_ALIGNMENT);
+        return txt;
+    }
+    
+    private JTextField agregarCampo(JPanel panel, String label, boolean obligatorio) {
+        panel.add(crearLabel(label, obligatorio));
+        JTextField txt = crearTextField();
+        panel.add(txt);
+        return txt;
+    }
+    
+    private <T> JComboBox<T> crearComboBox(T[] items) {
+        JComboBox<T> cmb = new JComboBox<>(items);
+        cmb.setBackground(BG_INPUT);
+        cmb.setForeground(TEXTO_PRINCIPAL);
+        cmb.setFont(new Font("Segoe UI", Font.PLAIN, 14));
+        cmb.setMaximumSize(new Dimension(Integer.MAX_VALUE, 35));
+        cmb.setAlignmentX(Component.LEFT_ALIGNMENT);
+        return cmb;
+    }
+    
+    private <T> JComboBox<T> agregarCombo(JPanel panel, String label, T[] items) {
+        panel.add(crearLabel(label, true));
+        JComboBox<T> cmb = crearComboBox(items);
+        panel.add(cmb);
+        return cmb;
+    }
+    
+    private JTextArea agregarTextArea(JPanel panel, String label) {
+        panel.add(crearLabel(label, true));
         
-        textField.addFocusListener(new java.awt.event.FocusAdapter() {
-            @Override
-            public void focusGained(java.awt.event.FocusEvent evt) {
-                if (textField.getText().equals(placeholder)) {
-                    textField.setText("");
-                    textField.setForeground(TEXTO_PRINCIPAL);
-                }
-            }
-            
-            @Override
-            public void focusLost(java.awt.event.FocusEvent evt) {
-                if (textField.getText().isEmpty()) {
-                    textField.setForeground(TEXTO_SECUNDARIO);
-                    textField.setText(placeholder);
-                }
-            }
-        });
+        JTextArea txt = new JTextArea(3, 20);
+        txt.setBackground(BG_INPUT);
+        txt.setForeground(TEXTO_PRINCIPAL);
+        txt.setCaretColor(TEXTO_PRINCIPAL);
+        txt.setFont(new Font("Segoe UI", Font.PLAIN, 14));
+        txt.setLineWrap(true);
+        txt.setWrapStyleWord(true);
+        txt.setBorder(BorderFactory.createCompoundBorder(
+            BorderFactory.createLineBorder(BORDE),
+            BorderFactory.createEmptyBorder(8, 10, 8, 10)
+        ));
+        
+        JScrollPane scroll = new JScrollPane(txt);
+        scroll.setBorder(BorderFactory.createLineBorder(BORDE));
+        scroll.setMaximumSize(new Dimension(Integer.MAX_VALUE, 80));
+        scroll.setAlignmentX(Component.LEFT_ALIGNMENT);
+        
+        panel.add(scroll);
+        return txt;
+    }
+    
+    private JButton crearBoton(String texto, Color bg) {
+        JButton btn = new JButton(texto);
+        btn.setBackground(bg);
+        btn.setForeground(Color.WHITE);
+        btn.setFont(new Font("Segoe UI", Font.PLAIN, 14));
+        btn.setFocusPainted(false);
+        btn.setBorderPainted(false);
+        btn.setCursor(new Cursor(Cursor.HAND_CURSOR));
+        btn.setPreferredSize(new Dimension(140, 35));
+        return btn;
     }
 }

@@ -4,6 +4,52 @@ Historial de cambios del sistema.
 
 ---
 
+## [2.3.0] - 2026-01-04
+
+### ✨ Nuevo - Sistema de Items por Compra
+- **Tabla editable estilo Excel**: Edición con un solo clic, navegación con Tab/Enter/flechas
+- **DialogoItems mejorado**: Formato de factura tradicional con 8 columnas
+- **Modo visualización**: Botón "Ver" para consultar productos en modo solo lectura
+- **Validaciones robustas**: Control de tipos de datos, rangos y valores negativos
+- **Cálculo automático**: Subtotales y total general se calculan en tiempo real
+- **Formato de moneda**: Separadores de miles ($1.234.567)
+- **Placeholders visuales**: Indicadores en celdas vacías
+- **Campos editables**: Fecha y número de factura editables en el diálogo
+- **Resumen de productos**: Contador de items inscritos y con datos
+- **Reloj en tiempo real**: Hora y fecha en ventana principal (esquina superior derecha)
+- **Indicador de versión**: v2.3.0 en esquina inferior izquierda
+- **FormularioCompraDarkConItems**: Formulario con integración de items
+- **Múltiples productos por factura**: Agregar varios items con cantidad, descripción, código y precio
+- **Métodos en CompraService**: 
+  - `guardarCompraConItems()`
+  - `actualizarCompraConItems()`
+  - `obtenerItemsDeCompra()`
+  - `contarItemsDeCompra()`
+
+### 🗄️ Base de Datos
+- Nueva tabla `items_compra` con campos:
+  - id, id_compra, cantidad, descripcion, codigo
+  - precio_unitario, subtotal, orden
+- Scripts de actualización: `actualizar_bd_items.sh` y `.bat`
+
+### 📦 Nuevos Archivos
+- `src/vista/FormularioCompraDarkConItems.java`
+- `src/modelo/ItemCompra.java`
+- `src/dao/ItemCompraDAO.java`
+- `src/dao/ItemCompraDAOMySQL.java`
+- `db/update_items_compra.sql`
+- `actualizar_bd_items.sh` y `.bat`
+
+### 🔧 Mejorado
+- VentanaUnificada usa nuevo formulario con items
+- CompraService con soporte completo para items
+- Interfaz más amplia (800x850px) para acomodar tabla
+
+### 📝 Documentación
+- `SISTEMA_ITEMS_COMPRA.md` actualizado con estado completo
+
+---
+
 ## [2.2.5] - 2026-01-03
 
 ### ✨ Nuevo

@@ -23,6 +23,7 @@ desktop.ini
 
 # Logs
 *.log
+monitor_recursos_*.txt
 
 # Archivos de distribución
 dist/
@@ -35,3 +36,28 @@ build/
 # Archivos de respaldo
 backup/
 *.sql.backup
+
+# Archivos sensibles - NO SUBIR A GITHUB
+CREDENCIALES_BASE_DATOS.txt
+RESUMEN_CAMBIO_CONTRASEÑAS.txt
+INSTRUCCIONES_CAMBIO_CONTRASEÑA.txt
+
+# Archivos de desarrollo temporal
+*_V2.3.0.txt
+DIAGNOSTICO_TOTAL.md
+FORMATO_*.txt
+EXPORTAR_*.txt
+PLANTILLA_*.md
+TABLA_*.txt
+CAMBIOS_*.txt
+CAMPOS_*.txt
+VALIDACIONES_*.txt
+VENTANA_*.txt
+IMPLEMENTACION_*.txt
+RESUMEN_*.txt
+PRUEBAS_*.txt
+LISTO_*.txt
+PREPARACION_*.txt
+SUBIDO_*.txt
+LEEME.txt
+ICONO_*.txt

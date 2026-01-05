@@ -27,11 +27,11 @@ echo ""
 # FUNCIÓN: Verificar si es primera vez
 # ============================================================
 es_primera_vez() {
-    # Verificar si existe la base de datos
+    # Verificar si existe la base de datos usando las credenciales de la aplicación
     if command -v mysql &> /dev/null; then
-        DB_EXISTS=$(sudo mysql -e "SHOW DATABASES LIKE 'gestion_proveedores';" 2>/dev/null | grep -c "gestion_proveedores")
+        DB_EXISTS=$(mysql -u proveedor_app -pproveedor123 -e "SHOW DATABASES LIKE 'gestion_proveedores';" 2>/dev/null | grep -c "gestion_proveedores")
     elif command -v mariadb &> /dev/null; then
-        DB_EXISTS=$(sudo mariadb -e "SHOW DATABASES LIKE 'gestion_proveedores';" 2>/dev/null | grep -c "gestion_proveedores")
+        DB_EXISTS=$(mariadb -u proveedor_app -pproveedor123 -e "SHOW DATABASES LIKE 'gestion_proveedores';" 2>/dev/null | grep -c "gestion_proveedores")
     else
         DB_EXISTS=0
     fi
@@ -72,11 +72,10 @@ configurar_base_datos() {
     fi
     
     # Verificar si el servicio está corriendo
-    if ! sudo systemctl is-active --quiet mysql 2>/dev/null && \
-       ! sudo systemctl is-active --quiet mariadb 2>/dev/null; then
-        echo -e "${YELLOW}Iniciando servicio de base de datos...${NC}"
-        sudo systemctl start mariadb 2>/dev/null || sudo systemctl start mysql 2>/dev/null
-        sleep 2
+    if ! systemctl is-active --quiet mysql 2>/dev/null && \
+       ! systemctl is-active --quiet mariadb 2>/dev/null; then
+        echo -e "${YELLOW}⚠ Servicio de base de datos no está activo${NC}"
+        echo "Inicia el servicio manualmente: sudo systemctl start mariadb"
     fi
     
     # Ejecutar script de configuración
