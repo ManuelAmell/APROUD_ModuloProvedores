@@ -7,20 +7,23 @@ import servicio.ProveedorService;
 
 public class FormularioProveedorDark extends JDialog {
     
-    // Tema oscuro
-    private final Color BG_PRINCIPAL = new Color(30, 30, 30);
-    private final Color BG_PANEL = new Color(37, 37, 38);
-    private final Color BG_INPUT = new Color(60, 60, 60);
-    private final Color TEXTO_PRINCIPAL = new Color(212, 212, 212);
-    private final Color TEXTO_SECUNDARIO = new Color(150, 150, 150);
-    private final Color BORDE = new Color(80, 80, 80);
-    private final Color ACENTO = new Color(0, 122, 204);
+    // Tema oscuro azul (igual que VentanaUnificada)
+    private final Color BG_PRINCIPAL = new Color(25, 35, 55);  // Azul oscuro
+    private final Color BG_PANEL = new Color(30, 42, 65);
+    private final Color BG_INPUT = new Color(45, 58, 82);
+    private final Color TEXTO_PRINCIPAL = new Color(220, 220, 220);
+    private final Color TEXTO_SECUNDARIO = new Color(160, 160, 160);
+    private final Color BORDE = new Color(70, 85, 110);
+    private final Color ACENTO = new Color(0, 150, 255);  // Azul brillante
+    private final Color CREDITO_PAGADO = new Color(80, 255, 120);   // Verde brillante
+    private final Color CREDITO_PENDIENTE = new Color(255, 80, 80); // Rojo brillante
     
     private final ProveedorService proveedorService;
     private Proveedor proveedorActual;
     
     private JTextField txtNombre, txtNit, txtTipo, txtDireccion, txtTelefono, txtEmail, txtContacto, txtInfoPago;
-    private JCheckBox chkActivo;
+    private ToggleSwitch toggleActivo;
+    private JLabel lblEstadoActivo;
     
     public FormularioProveedorDark(VentanaUnificada padre, Proveedor proveedor) {
         super(padre, proveedor == null ? "Nuevo Proveedor" : "Editar Proveedor", true);
@@ -37,9 +40,9 @@ public class FormularioProveedorDark extends JDialog {
     }
     
     private void configurarDialogo() {
-        setSize(550, 600);
+        setSize(600, 680);
         setLocationRelativeTo(getParent());
-        setResizable(true); // Permitir maximizar
+        setResizable(true);
         getContentPane().setBackground(BG_PRINCIPAL);
         
         // Cargar icono de la aplicación
@@ -54,13 +57,55 @@ public class FormularioProveedorDark extends JDialog {
     private void inicializarComponentes() {
         setLayout(new BorderLayout(0, 0));
         
+        // Panel principal con scroll
         JPanel panelCampos = new JPanel();
         panelCampos.setLayout(new BoxLayout(panelCampos, BoxLayout.Y_AXIS));
         panelCampos.setBackground(BG_PRINCIPAL);
-        panelCampos.setBorder(BorderFactory.createEmptyBorder(20, 30, 20, 30));
+        panelCampos.setBorder(BorderFactory.createEmptyBorder(25, 35, 25, 35));
         
-        txtNombre = agregarCampo(panelCampos, "Nombre *", true);
-        txtNit = agregarCampo(panelCampos, "NIT (opcional)", false);
+        // ===== TOGGLE SWITCH AL PRINCIPIO =====
+        JPanel panelToggle = new JPanel(new BorderLayout(15, 0));
+        panelToggle.setBackground(BG_PRINCIPAL);
+        panelToggle.setMaximumSize(new Dimension(Integer.MAX_VALUE, 50));
+        panelToggle.setAlignmentX(Component.LEFT_ALIGNMENT);
+        panelToggle.setBorder(BorderFactory.createCompoundBorder(
+            BorderFactory.createLineBorder(BORDE, 1),
+            BorderFactory.createEmptyBorder(10, 15, 10, 15)
+        ));
+        
+        JLabel lblEstadoTitulo = new JLabel("Estado del Proveedor:");
+        lblEstadoTitulo.setForeground(TEXTO_PRINCIPAL);
+        lblEstadoTitulo.setFont(new Font("Segoe UI", Font.BOLD, 14));
+        
+        JPanel panelToggleDerecha = new JPanel(new FlowLayout(FlowLayout.RIGHT, 10, 0));
+        panelToggleDerecha.setBackground(BG_PRINCIPAL);
+        
+        lblEstadoActivo = new JLabel("Activo");
+        lblEstadoActivo.setFont(new Font("Segoe UI", Font.BOLD, 13));
+        lblEstadoActivo.setForeground(CREDITO_PAGADO);
+        
+        toggleActivo = new ToggleSwitch();
+        toggleActivo.setActivo(true); // Por defecto activo
+        
+        // Listener para cambiar el texto y color
+        toggleActivo.addPropertyChangeListener("estado", evt -> {
+            boolean activo = (Boolean) evt.getNewValue();
+            lblEstadoActivo.setText(activo ? "Activo" : "Inactivo");
+            lblEstadoActivo.setForeground(activo ? CREDITO_PAGADO : CREDITO_PENDIENTE);
+        });
+        
+        panelToggleDerecha.add(lblEstadoActivo);
+        panelToggleDerecha.add(toggleActivo);
+        
+        panelToggle.add(lblEstadoTitulo, BorderLayout.WEST);
+        panelToggle.add(panelToggleDerecha, BorderLayout.EAST);
+        
+        panelCampos.add(panelToggle);
+        panelCampos.add(Box.createVerticalStrut(20)); // Espacio
+        
+        // ===== CAMPOS DEL FORMULARIO =====
+        txtNombre = agregarCampo(panelCampos, "Nombre del Proveedor *", true);
+        txtNit = agregarCampo(panelCampos, "NIT / Identificación", false);
         txtTipo = agregarCampo(panelCampos, "Tipo (ropa, calzado, insumos, varios)", false);
         txtDireccion = agregarCampo(panelCampos, "Dirección", false);
         txtTelefono = agregarCampo(panelCampos, "Teléfono", false);
@@ -68,21 +113,13 @@ public class FormularioProveedorDark extends JDialog {
         txtContacto = agregarCampo(panelCampos, "Persona de Contacto", false);
         txtInfoPago = agregarCampo(panelCampos, "Info de Pago (banco, cuenta)", false);
         
-        JPanel panelActivo = new JPanel(new FlowLayout(FlowLayout.LEFT, 0, 5));
-        panelActivo.setBackground(BG_PRINCIPAL);
-        chkActivo = new JCheckBox("Activo");
-        chkActivo.setSelected(true);
-        chkActivo.setBackground(BG_PRINCIPAL);
-        chkActivo.setForeground(TEXTO_PRINCIPAL);
-        chkActivo.setFont(new Font("Segoe UI", Font.PLAIN, 13));
-        panelActivo.add(chkActivo);
-        panelCampos.add(panelActivo);
+        // Panel de botones
+        JPanel panelBotones = new JPanel(new FlowLayout(FlowLayout.CENTER, 20, 20));
+        panelBotones.setBackground(BG_PANEL);
+        panelBotones.setBorder(BorderFactory.createMatteBorder(1, 0, 0, 0, BORDE));
         
-        JPanel panelBotones = new JPanel(new FlowLayout(FlowLayout.CENTER, 15, 15));
-        panelBotones.setBackground(BG_PRINCIPAL);
-        
-        JButton btnGuardar = crearBoton("Guardar", ACENTO);
-        JButton btnCancelar = crearBoton("Cancelar", BG_INPUT);
+        JButton btnGuardar = crearBoton("💾 Guardar", ACENTO);
+        JButton btnCancelar = crearBoton("✕ Cancelar", new Color(100, 100, 100));
         
         btnGuardar.addActionListener(e -> guardar());
         btnCancelar.addActionListener(e -> dispose());
@@ -90,7 +127,13 @@ public class FormularioProveedorDark extends JDialog {
         panelBotones.add(btnGuardar);
         panelBotones.add(btnCancelar);
         
-        add(new JScrollPane(panelCampos), BorderLayout.CENTER);
+        // Scroll pane con estilo moderno
+        JScrollPane scrollPane = new JScrollPane(panelCampos);
+        scrollPane.setBackground(BG_PRINCIPAL);
+        scrollPane.getViewport().setBackground(BG_PRINCIPAL);
+        ModernScrollBarUI.aplicarScrollModerno(scrollPane);
+        
+        add(scrollPane, BorderLayout.CENTER);
         add(panelBotones, BorderLayout.SOUTH);
     }
 
@@ -98,21 +141,37 @@ public class FormularioProveedorDark extends JDialog {
     private JTextField agregarCampo(JPanel panel, String label, boolean obligatorio) {
         JLabel lbl = new JLabel(label);
         lbl.setForeground(obligatorio ? ACENTO : TEXTO_SECUNDARIO);
-        lbl.setFont(new Font("Segoe UI", Font.PLAIN, 12));
+        lbl.setFont(new Font("Segoe UI", Font.BOLD, 12));
         lbl.setAlignmentX(Component.LEFT_ALIGNMENT);
-        lbl.setBorder(BorderFactory.createEmptyBorder(10, 0, 5, 0));
+        lbl.setBorder(BorderFactory.createEmptyBorder(12, 0, 6, 0));
         
         JTextField txt = new JTextField();
         txt.setBackground(BG_INPUT);
         txt.setForeground(TEXTO_PRINCIPAL);
-        txt.setCaretColor(TEXTO_PRINCIPAL);
-        txt.setFont(new Font("Segoe UI", Font.PLAIN, 13));
+        txt.setCaretColor(ACENTO);
+        txt.setFont(new Font("Segoe UI", Font.PLAIN, 14));
         txt.setBorder(BorderFactory.createCompoundBorder(
-            BorderFactory.createLineBorder(BORDE),
-            BorderFactory.createEmptyBorder(8, 10, 8, 10)
+            BorderFactory.createLineBorder(BORDE, 1),
+            BorderFactory.createEmptyBorder(10, 12, 10, 12)
         ));
-        txt.setMaximumSize(new Dimension(Integer.MAX_VALUE, 35));
+        txt.setMaximumSize(new Dimension(Integer.MAX_VALUE, 42));
         txt.setAlignmentX(Component.LEFT_ALIGNMENT);
+        
+        // Efecto focus
+        txt.addFocusListener(new java.awt.event.FocusAdapter() {
+            public void focusGained(java.awt.event.FocusEvent evt) {
+                txt.setBorder(BorderFactory.createCompoundBorder(
+                    BorderFactory.createLineBorder(ACENTO, 2),
+                    BorderFactory.createEmptyBorder(9, 11, 9, 11)
+                ));
+            }
+            public void focusLost(java.awt.event.FocusEvent evt) {
+                txt.setBorder(BorderFactory.createCompoundBorder(
+                    BorderFactory.createLineBorder(BORDE, 1),
+                    BorderFactory.createEmptyBorder(10, 12, 10, 12)
+                ));
+            }
+        });
         
         panel.add(lbl);
         panel.add(txt);
@@ -124,11 +183,22 @@ public class FormularioProveedorDark extends JDialog {
         JButton btn = new JButton(texto);
         btn.setBackground(bg);
         btn.setForeground(Color.WHITE);
-        btn.setFont(new Font("Segoe UI", Font.PLAIN, 13));
+        btn.setFont(new Font("Segoe UI", Font.BOLD, 14));
         btn.setFocusPainted(false);
         btn.setBorderPainted(false);
         btn.setCursor(new Cursor(Cursor.HAND_CURSOR));
-        btn.setPreferredSize(new Dimension(120, 35));
+        btn.setPreferredSize(new Dimension(140, 42));
+        
+        // Efecto hover
+        btn.addMouseListener(new java.awt.event.MouseAdapter() {
+            public void mouseEntered(java.awt.event.MouseEvent evt) {
+                btn.setBackground(bg.brighter());
+            }
+            public void mouseExited(java.awt.event.MouseEvent evt) {
+                btn.setBackground(bg);
+            }
+        });
+        
         return btn;
     }
     
@@ -141,14 +211,20 @@ public class FormularioProveedorDark extends JDialog {
         txtEmail.setText(proveedorActual.getEmail() != null ? proveedorActual.getEmail() : "");
         txtContacto.setText(proveedorActual.getPersonaContacto() != null ? proveedorActual.getPersonaContacto() : "");
         txtInfoPago.setText(proveedorActual.getInformacionPago() != null ? proveedorActual.getInformacionPago() : "");
-        chkActivo.setSelected(proveedorActual.isActivo());
+        
+        // Cargar estado del toggle
+        boolean activo = proveedorActual.isActivo();
+        toggleActivo.setActivo(activo);
+        lblEstadoActivo.setText(activo ? "Activo" : "Inactivo");
+        lblEstadoActivo.setForeground(activo ? CREDITO_PAGADO : CREDITO_PENDIENTE);
     }
     
     private void guardar() {
         String nombre = txtNombre.getText().trim();
         
         if (nombre.isEmpty()) {
-            JOptionPane.showMessageDialog(this, "El nombre es obligatorio", "Error", JOptionPane.ERROR_MESSAGE);
+            mostrarError("El nombre del proveedor es obligatorio");
+            txtNombre.requestFocus();
             return;
         }
         
@@ -161,7 +237,7 @@ public class FormularioProveedorDark extends JDialog {
         proveedor.setEmail(txtEmail.getText().trim());
         proveedor.setPersonaContacto(txtContacto.getText().trim());
         proveedor.setInformacionPago(txtInfoPago.getText().trim());
-        proveedor.setActivo(chkActivo.isSelected());
+        proveedor.setActivo(toggleActivo.isActivo()); // Usar el estado del toggle
         
         String resultado;
         if (proveedorActual == null) {
@@ -171,10 +247,18 @@ public class FormularioProveedorDark extends JDialog {
         }
         
         if (resultado.startsWith("Error")) {
-            JOptionPane.showMessageDialog(this, resultado, "Error", JOptionPane.ERROR_MESSAGE);
+            mostrarError(resultado);
         } else {
-            JOptionPane.showMessageDialog(this, resultado, "Éxito", JOptionPane.INFORMATION_MESSAGE);
+            mostrarExito(resultado);
             dispose();
         }
+    }
+    
+    private void mostrarError(String mensaje) {
+        JOptionPane.showMessageDialog(this, mensaje, "Error", JOptionPane.ERROR_MESSAGE);
+    }
+    
+    private void mostrarExito(String mensaje) {
+        JOptionPane.showMessageDialog(this, mensaje, "Éxito", JOptionPane.INFORMATION_MESSAGE);
     }
 }

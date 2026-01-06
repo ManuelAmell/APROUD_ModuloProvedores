@@ -1,0 +1,37 @@
+==========================================
+CÓMO EJECUTAR LA APLICACIÓN
+==========================================
+
+La aplicación ya está configurada y funcionando.
+
+COMANDO CORRECTO:
+  ./ejecutar_simple.sh
+
+NO USES:
+  ./ejecutar.sh  (Este intenta reconfigurar la BD)
+
+==========================================
+¿POR QUÉ?
+==========================================
+
+- ejecutar.sh: Configura BD desde cero (solo primera vez)
+- ejecutar_simple.sh: Solo ejecuta la aplicación
+
+La base de datos YA está configurada con:
+  Usuario: proveedor_app
+  Contraseña: Amell123
+
+==========================================
+VERIFICAR QUE FUNCIONA
+==========================================
+
+1. Ejecutar:
+   ./ejecutar_simple.sh
+
+2. Deberías ver:
+   ✓ Conexión a MySQL establecida correctamente
+   ✓ Aplicación iniciada correctamente
+
+3. Se abrirá la ventana de la aplicación
+
+==========================================

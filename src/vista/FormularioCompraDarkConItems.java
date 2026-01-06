@@ -114,9 +114,8 @@ public class FormularioCompraDarkConItems extends JDialog {
         panelBotones.add(btnGuardar);
         
         JScrollPane scroll = new JScrollPane(panelPrincipal);
-        scroll.setBorder(null);
         scroll.getViewport().setBackground(BG_PRINCIPAL);
-        scroll.getVerticalScrollBar().setUnitIncrement(16);
+        ModernScrollBarUI.aplicarScrollModerno(scroll);
         
         add(scroll, BorderLayout.CENTER);
         add(panelBotones, BorderLayout.SOUTH);
@@ -651,6 +650,7 @@ public class FormularioCompraDarkConItems extends JDialog {
         scroll.setBorder(BorderFactory.createLineBorder(BORDE));
         scroll.setMaximumSize(new Dimension(Integer.MAX_VALUE, 80));
         scroll.setAlignmentX(Component.LEFT_ALIGNMENT);
+        ModernScrollBarUI.aplicarScrollModerno(scroll);
         
         panel.add(scroll);
         return txt;

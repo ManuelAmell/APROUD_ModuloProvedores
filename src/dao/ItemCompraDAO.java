@@ -19,4 +19,5 @@ public interface ItemCompraDAO {
     List<ItemCompra> obtenerPorCompra(int idCompra);
     boolean eliminarPorCompra(int idCompra);
     int contarItemsPorCompra(int idCompra);
+    int sumarCantidadesPorCompra(int idCompra);
 }

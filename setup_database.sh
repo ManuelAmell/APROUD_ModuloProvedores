@@ -118,7 +118,7 @@ INSERT INTO compras (id_proveedor, numero_factura, categoria, descripcion, canti
 (2, 'FAC-004', 'accesorios', 'Cinturones de cuero genuino', 30, 25000, 750000, '2024-12-20', 'credito', 'pagado', '2025-01-02');
 
 -- Crear usuario para la aplicación (si no existe)
-CREATE USER IF NOT EXISTS 'proveedor_app'@'localhost' IDENTIFIED BY 'proveedor123';
+CREATE USER IF NOT EXISTS 'proveedor_app'@'localhost' IDENTIFIED BY 'Amell123';
 GRANT ALL PRIVILEGES ON gestion_proveedores.* TO 'proveedor_app'@'localhost';
 FLUSH PRIVILEGES;
 

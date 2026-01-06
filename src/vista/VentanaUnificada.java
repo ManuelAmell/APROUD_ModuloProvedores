@@ -74,6 +74,15 @@ public class VentanaUnificada extends JFrame {
     private JLabel lblVersion;
     private javax.swing.Timer timerReloj;
     
+    // Paginación
+    private static final int FACTURAS_POR_PAGINA = 25;
+    private int paginaActual = 0;
+    private int totalPaginas = 0;
+    private List<Compra> comprasCompletas; // Lista completa sin paginar
+    private JButton btnPaginaAnterior;
+    private JButton btnPaginaSiguiente;
+    private JLabel lblPaginacion;
+    
     public VentanaUnificada() {
         this.proveedorService = new ProveedorService();
         this.compraService = new CompraService();
@@ -182,15 +191,48 @@ public class VentanaUnificada extends JFrame {
         panel.setPreferredSize(new Dimension(280, 0));
         panel.setBorder(BorderFactory.createMatteBorder(0, 0, 0, 1, BORDE));
         
-        // Panel superior con título y búsqueda
+        // Panel superior con título, toggle y búsqueda
         JPanel panelSuperior = new JPanel(new BorderLayout(5, 5));
         panelSuperior.setBackground(BG_SIDEBAR);
         panelSuperior.setBorder(BorderFactory.createEmptyBorder(15, 15, 10, 15));
+        
+        // Panel de título con toggle
+        JPanel panelTituloToggle = new JPanel(new BorderLayout(10, 0));
+        panelTituloToggle.setBackground(BG_SIDEBAR);
         
         // Título
         JLabel lblTitulo = new JLabel("PROVEEDORES");
         lblTitulo.setFont(new Font("Segoe UI", Font.BOLD, 14));
         lblTitulo.setForeground(TEXTO_PRINCIPAL);
+        
+        // Panel para toggle y etiqueta
+        JPanel panelToggle = new JPanel(new FlowLayout(FlowLayout.RIGHT, 5, 0));
+        panelToggle.setBackground(BG_SIDEBAR);
+        
+        // Toggle Switch
+        ToggleSwitch toggleEstado = new ToggleSwitch();
+        toggleEstado.setActivo(true); // Por defecto: Activo
+        
+        // Etiqueta del estado
+        JLabel lblEstado = new JLabel("Activo");
+        lblEstado.setFont(new Font("Segoe UI", Font.BOLD, 11));
+        lblEstado.setForeground(CREDITO_PAGADO); // Verde para activo
+        
+        // Listener para cambiar el texto y color cuando cambia el estado
+        toggleEstado.addPropertyChangeListener("estado", evt -> {
+            boolean activo = (Boolean) evt.getNewValue();
+            lblEstado.setText(activo ? "Activo" : "Inactivo");
+            lblEstado.setForeground(activo ? CREDITO_PAGADO : CREDITO_PENDIENTE);
+            
+            // Recargar proveedores según el estado
+            cargarProveedoresPorEstado(activo);
+        });
+        
+        panelToggle.add(lblEstado);
+        panelToggle.add(toggleEstado);
+        
+        panelTituloToggle.add(lblTitulo, BorderLayout.WEST);
+        panelTituloToggle.add(panelToggle, BorderLayout.EAST);
         
         // Barra de búsqueda de proveedores
         JPanel panelBusquedaProveedor = new JPanel(new BorderLayout(5, 0));
@@ -222,8 +264,13 @@ public class VentanaUnificada extends JFrame {
         panelBusquedaProveedor.add(lblBuscarIcon, BorderLayout.WEST);
         panelBusquedaProveedor.add(txtBuscarProveedor, BorderLayout.CENTER);
         
-        panelSuperior.add(lblTitulo, BorderLayout.NORTH);
-        panelSuperior.add(panelBusquedaProveedor, BorderLayout.CENTER);
+        // Panel contenedor para título+toggle y búsqueda
+        JPanel panelSuperiorCompleto = new JPanel(new BorderLayout(0, 5));
+        panelSuperiorCompleto.setBackground(BG_SIDEBAR);
+        panelSuperiorCompleto.add(panelTituloToggle, BorderLayout.NORTH);
+        panelSuperiorCompleto.add(panelBusquedaProveedor, BorderLayout.CENTER);
+        
+        panelSuperior.add(panelSuperiorCompleto, BorderLayout.CENTER);
         
         // Lista de proveedores
         modeloListaProveedores = new DefaultListModel<>();
@@ -249,8 +296,8 @@ public class VentanaUnificada extends JFrame {
         
         JScrollPane scrollProveedores = new JScrollPane(listaProveedores);
         scrollProveedores.setBackground(BG_SIDEBAR);
-        scrollProveedores.setBorder(null);
         scrollProveedores.getViewport().setBackground(BG_SIDEBAR);
+        ModernScrollBarUI.aplicarScrollModerno(scrollProveedores);
         
         // Botones
         JPanel panelBotones = new JPanel(new GridLayout(3, 1, 5, 5));
@@ -338,7 +385,7 @@ public class VentanaUnificada extends JFrame {
         panelSuperior.add(panelAcciones, BorderLayout.EAST);
         
         // Tabla de compras
-        String[] columnas = {"Factura", "Categoría", "Descripción", "Cant.", "P.Unit", 
+        String[] columnas = {"Factura", "Categoría", "Descripción", "Cant.", 
                              "Total", "Fecha", "Pago", "Estado", "F.Pago"};
         
         modeloTablaCompras = new DefaultTableModel(null, columnas) {
@@ -374,8 +421,8 @@ public class VentanaUnificada extends JFrame {
         
         JScrollPane scrollTabla = new JScrollPane(tablaCompras);
         scrollTabla.setBackground(BG_PRINCIPAL);
-        scrollTabla.setBorder(null);
         scrollTabla.getViewport().setBackground(BG_PRINCIPAL);
+        ModernScrollBarUI.aplicarScrollModerno(scrollTabla);
         
         // Contenedor para búsqueda y panel superior
         JPanel panelTop = new JPanel(new BorderLayout(0, 0));
@@ -383,8 +430,43 @@ public class VentanaUnificada extends JFrame {
         panelTop.add(panelBusqueda, BorderLayout.NORTH);
         panelTop.add(panelSuperior, BorderLayout.CENTER);
         
+        // Panel de paginación
+        JPanel panelPaginacion = crearPanelPaginacion();
+        
         panel.add(panelTop, BorderLayout.NORTH);
         panel.add(scrollTabla, BorderLayout.CENTER);
+        panel.add(panelPaginacion, BorderLayout.SOUTH);
+        
+        return panel;
+    }
+    
+    private JPanel crearPanelPaginacion() {
+        JPanel panel = new JPanel(new FlowLayout(FlowLayout.CENTER, 15, 10));
+        panel.setBackground(BG_PANEL);
+        panel.setBorder(BorderFactory.createMatteBorder(1, 0, 0, 0, BORDE));
+        
+        // Botón Anterior
+        btnPaginaAnterior = crearBoton("← Anterior", BG_INPUT);
+        btnPaginaAnterior.setPreferredSize(new Dimension(120, 32));
+        btnPaginaAnterior.addActionListener(e -> cambiarPagina(-1));
+        
+        // Label de paginación
+        lblPaginacion = new JLabel("Página 1 de 1");
+        lblPaginacion.setFont(new Font("Segoe UI", Font.BOLD, 13));
+        lblPaginacion.setForeground(TEXTO_PRINCIPAL);
+        
+        // Botón Siguiente
+        btnPaginaSiguiente = crearBoton("Siguiente →", BG_INPUT);
+        btnPaginaSiguiente.setPreferredSize(new Dimension(120, 32));
+        btnPaginaSiguiente.addActionListener(e -> cambiarPagina(1));
+        
+        panel.add(btnPaginaAnterior);
+        panel.add(lblPaginacion);
+        panel.add(btnPaginaSiguiente);
+        
+        // Inicialmente deshabilitados
+        btnPaginaAnterior.setEnabled(false);
+        btnPaginaSiguiente.setEnabled(false);
         
         return panel;
     }
@@ -528,79 +610,16 @@ public class VentanaUnificada extends JFrame {
         return panel;
     }
     
-    private void filtrarCompras(String textoBusqueda) {
-        if (proveedorActual == null) return;
-        
-        modeloTablaCompras.setRowCount(0);
-        List<Compra> compras = compraService.obtenerComprasPorProveedor(proveedorActual.getId());
-        NumberFormat formatoMoneda = NumberFormat.getCurrencyInstance(new Locale("es", "CO"));
-        DateTimeFormatter formatoFecha = DateTimeFormatter.ofPattern("dd/MM/yyyy");
-        
-        String busqueda = textoBusqueda.toLowerCase().trim();
-        
-        for (Compra c : compras) {
-            // Filtrar por múltiples campos
-            boolean coincide = busqueda.isEmpty() ||
-                c.getNumeroFactura().toLowerCase().contains(busqueda) ||
-                c.getCategoria().toLowerCase().contains(busqueda) ||
-                c.getDescripcion().toLowerCase().contains(busqueda) ||
-                proveedorActual.getNombre().toLowerCase().contains(busqueda);
-            
-            if (coincide) {
-                // Capitalizar primera letra de categoría
-                String categoriaDisplay = c.getCategoria();
-                if (categoriaDisplay != null && !categoriaDisplay.isEmpty()) {
-                    categoriaDisplay = categoriaDisplay.substring(0, 1).toUpperCase() + categoriaDisplay.substring(1);
-                }
-                
-                // Determinar estado de pago
-                String estadoDisplay = "";
-                if (c.getFormaPago() == FormaPago.CREDITO) {
-                    estadoDisplay = c.getEstadoCredito() != null ? c.getEstadoCredito().getEtiqueta() : "";
-                } else {
-                    estadoDisplay = c.getFechaPago() != null ? "Pagado" : "Pendiente";
-                }
-                
-                Object[] fila = {
-                    c.getNumeroFactura(),
-                    categoriaDisplay,
-                    c.getDescripcion().length() > 40 ? c.getDescripcion().substring(0, 37) + "..." : c.getDescripcion(),
-                    c.getCantidad() != null ? c.getCantidad() : "",
-                    c.getPrecioUnitario() != null ? formatoMoneda.format(c.getPrecioUnitario()) : "",
-                    formatoMoneda.format(c.getTotal()),
-                    c.getFechaCompra().format(formatoFecha),
-                    c.getFormaPago().getEtiqueta(),
-                    estadoDisplay,
-                    c.getFechaPago() != null ? c.getFechaPago().format(formatoFecha) : ""
-                };
-                modeloTablaCompras.addRow(fila);
-            }
-        }
-    }
-    
-    private void filtrarProveedores() {
-        String busqueda = txtBuscarProveedor.getText().toLowerCase().trim();
-        modeloListaProveedores.clear();
-        
-        for (Proveedor p : proveedores) {
-            if (busqueda.isEmpty() || p.getNombre().toLowerCase().contains(busqueda)) {
-                String tipo = p.getTipo() != null ? " [" + p.getTipo() + "]" : "";
-                modeloListaProveedores.addElement(p.getNombre() + tipo);
-            }
-        }
-        
-        if (modeloListaProveedores.getSize() > 0) {
-            listaProveedores.setSelectedIndex(0);
-        }
-    }
-    
     private void aplicarFiltros() {
-        if (proveedorActual == null) return;
+        if (proveedorActual == null) {
+            comprasCompletas = new java.util.ArrayList<>();
+            paginaActual = 0;
+            actualizarPaginacion();
+            return;
+        }
         
-        modeloTablaCompras.setRowCount(0);
-        List<Compra> compras = compraService.obtenerComprasPorProveedor(proveedorActual.getId());
-        NumberFormat formatoMoneda = NumberFormat.getCurrencyInstance(new Locale("es", "CO"));
-        DateTimeFormatter formatoFecha = DateTimeFormatter.ofPattern("dd/MM/yyyy");
+        // Obtener todas las compras del proveedor
+        List<Compra> todasCompras = compraService.obtenerComprasPorProveedor(proveedorActual.getId());
         DateTimeFormatter formatoFechaInput = DateTimeFormatter.ofPattern("[dd/MM/yy][dd/MM/yyyy][dd-MM-yy][dd-MM-yyyy]");
         
         String busqueda = txtBuscarCompra.getText().toLowerCase().trim();
@@ -628,7 +647,10 @@ public class VentanaUnificada extends JFrame {
             // Si hay error en las fechas, ignorar el filtro de fecha
         }
         
-        for (Compra c : compras) {
+        // Filtrar compras
+        comprasCompletas = new java.util.ArrayList<>();
+        
+        for (Compra c : todasCompras) {
             // Filtro de texto
             boolean coincideTexto = busqueda.isEmpty() ||
                 c.getNumeroFactura().toLowerCase().contains(busqueda) ||
@@ -658,34 +680,32 @@ public class VentanaUnificada extends JFrame {
             }
             
             if (coincideTexto && coincideFormaPago && coincideEstado && coincideFecha) {
-                // Capitalizar primera letra de categoría
-                String categoriaDisplay = c.getCategoria();
-                if (categoriaDisplay != null && !categoriaDisplay.isEmpty()) {
-                    categoriaDisplay = categoriaDisplay.substring(0, 1).toUpperCase() + categoriaDisplay.substring(1);
-                }
-                
-                // Determinar estado de pago
-                String estadoDisplay = "";
-                if (c.getFormaPago() == FormaPago.CREDITO) {
-                    estadoDisplay = c.getEstadoCredito() != null ? c.getEstadoCredito().getEtiqueta() : "";
-                } else {
-                    estadoDisplay = c.getFechaPago() != null ? "Pagado" : "Pendiente";
-                }
-                
-                Object[] fila = {
-                    c.getNumeroFactura(),
-                    categoriaDisplay,
-                    c.getDescripcion().length() > 40 ? c.getDescripcion().substring(0, 37) + "..." : c.getDescripcion(),
-                    c.getCantidad() != null ? c.getCantidad() : "",
-                    c.getPrecioUnitario() != null ? formatoMoneda.format(c.getPrecioUnitario()) : "",
-                    formatoMoneda.format(c.getTotal()),
-                    c.getFechaCompra().format(formatoFecha),
-                    c.getFormaPago().getEtiqueta(),
-                    estadoDisplay,
-                    c.getFechaPago() != null ? c.getFechaPago().format(formatoFecha) : ""
-                };
-                modeloTablaCompras.addRow(fila);
+                comprasCompletas.add(c);
             }
+        }
+        
+        // Reiniciar paginación y cargar primera página
+        paginaActual = 0;
+        totalPaginas = (int) Math.ceil((double) comprasCompletas.size() / FACTURAS_POR_PAGINA);
+        if (totalPaginas == 0) totalPaginas = 1;
+        
+        cargarPaginaActual();
+        actualizarPaginacion();
+    }
+    
+    private void filtrarProveedores() {
+        String busqueda = txtBuscarProveedor.getText().toLowerCase().trim();
+        modeloListaProveedores.clear();
+        
+        for (Proveedor p : proveedores) {
+            if (busqueda.isEmpty() || p.getNombre().toLowerCase().contains(busqueda)) {
+                String tipo = p.getTipo() != null ? " [" + p.getTipo() + "]" : "";
+                modeloListaProveedores.addElement(p.getNombre() + tipo);
+            }
+        }
+        
+        if (modeloListaProveedores.getSize() > 0) {
+            listaProveedores.setSelectedIndex(0);
         }
     }
     
@@ -772,8 +792,8 @@ public class VentanaUnificada extends JFrame {
                     c.setBackground(BG_PRINCIPAL);
                     
                     // Colorear según forma de pago y estado
-                    String formaPago = (String) table.getValueAt(row, 7); // Columna "Pago"
-                    String estado = (String) table.getValueAt(row, 8); // Columna "Estado"
+                    String formaPago = (String) table.getValueAt(row, 6); // Columna "Pago"
+                    String estado = (String) table.getValueAt(row, 7); // Columna "Estado"
                     
                     if (formaPago != null && estado != null) {
                         if (estado.equals("Pendiente")) {
@@ -791,8 +811,8 @@ public class VentanaUnificada extends JFrame {
                 }
                 
                 // Centrado inteligente por columna
-                if (column == 4 || column == 5) {
-                    // P.Unit, Total - Derecha (números)
+                if (column == 4) {
+                    // Total - Derecha (números)
                     setHorizontalAlignment(SwingConstants.RIGHT);
                 } else if (column == 2) {
                     // Descripción - Izquierda (texto largo)
@@ -825,11 +845,51 @@ public class VentanaUnificada extends JFrame {
         }
     }
     
+    /**
+     * Carga proveedores según su estado (activo o inactivo)
+     */
+    private void cargarProveedoresPorEstado(boolean activo) {
+        modeloListaProveedores.clear();
+        
+        if (activo) {
+            // Cargar solo proveedores activos
+            proveedores = proveedorService.obtenerProveedoresActivos();
+        } else {
+            // Cargar todos y filtrar inactivos
+            List<Proveedor> todosProveedores = proveedorService.obtenerTodosProveedores();
+            proveedores = new java.util.ArrayList<>();
+            for (Proveedor p : todosProveedores) {
+                if (!p.isActivo()) {
+                    proveedores.add(p);
+                }
+            }
+        }
+        
+        for (Proveedor p : proveedores) {
+            String tipo = p.getTipo() != null ? " [" + p.getTipo() + "]" : "";
+            modeloListaProveedores.addElement(p.getNombre() + tipo);
+        }
+        
+        if (!proveedores.isEmpty()) {
+            listaProveedores.setSelectedIndex(0);
+        } else {
+            // Si no hay proveedores, limpiar la vista
+            proveedorActual = null;
+            lblProveedorSeleccionado.setText("Sin proveedores " + (activo ? "activos" : "inactivos"));
+            modeloTablaCompras.setRowCount(0);
+            lblTotalProveedor.setText("");
+            lblPendienteProveedor.setText("");
+        }
+    }
+    
     private void seleccionarProveedor() {
         int index = listaProveedores.getSelectedIndex();
         if (index >= 0 && index < proveedores.size()) {
             proveedorActual = proveedores.get(index);
             lblProveedorSeleccionado.setText(proveedorActual.getNombre());
+            
+            // Reiniciar paginación al cambiar de proveedor
+            paginaActual = 0;
             cargarComprasProveedor();
             actualizarTotalProveedor();
         }
@@ -838,13 +898,49 @@ public class VentanaUnificada extends JFrame {
     private void cargarComprasProveedor() {
         modeloTablaCompras.setRowCount(0);
         
-        if (proveedorActual == null) return;
+        if (proveedorActual == null) {
+            comprasCompletas = new java.util.ArrayList<>();
+            actualizarPaginacion();
+            return;
+        }
         
-        List<Compra> compras = compraService.obtenerComprasPorProveedor(proveedorActual.getId());
+        // Cargar todas las compras del proveedor
+        comprasCompletas = compraService.obtenerComprasPorProveedor(proveedorActual.getId());
+        
+        // Calcular total de páginas
+        totalPaginas = (int) Math.ceil((double) comprasCompletas.size() / FACTURAS_POR_PAGINA);
+        if (totalPaginas == 0) totalPaginas = 1;
+        
+        // Asegurar que la página actual es válida
+        if (paginaActual >= totalPaginas) {
+            paginaActual = Math.max(0, totalPaginas - 1);
+        }
+        
+        // Cargar solo las compras de la página actual
+        cargarPaginaActual();
+        
+        // Actualizar controles de paginación
+        actualizarPaginacion();
+    }
+    
+    private void cargarPaginaActual() {
+        modeloTablaCompras.setRowCount(0);
+        
+        if (comprasCompletas == null || comprasCompletas.isEmpty()) {
+            return;
+        }
+        
         NumberFormat formatoMoneda = NumberFormat.getCurrencyInstance(new Locale("es", "CO"));
         DateTimeFormatter formatoFecha = DateTimeFormatter.ofPattern("dd/MM/yyyy");
         
-        for (Compra c : compras) {
+        // Calcular índices de inicio y fin para la página actual
+        int inicio = paginaActual * FACTURAS_POR_PAGINA;
+        int fin = Math.min(inicio + FACTURAS_POR_PAGINA, comprasCompletas.size());
+        
+        // Cargar solo las compras de la página actual
+        for (int i = inicio; i < fin; i++) {
+            Compra c = comprasCompletas.get(i);
+            
             // Capitalizar primera letra de categoría para mostrar
             String categoriaDisplay = c.getCategoria();
             if (categoriaDisplay != null && !categoriaDisplay.isEmpty()) {
@@ -860,12 +956,14 @@ public class VentanaUnificada extends JFrame {
                 estadoDisplay = c.getFechaPago() != null ? "Pagado" : "Pendiente";
             }
             
+            // Sumar cantidades de todos los items de la compra
+            int cantidadTotal = compraService.sumarCantidadesDeCompra(c.getId());
+            
             Object[] fila = {
                 c.getNumeroFactura(),
                 categoriaDisplay,
                 c.getDescripcion().length() > 40 ? c.getDescripcion().substring(0, 37) + "..." : c.getDescripcion(),
-                c.getCantidad() != null ? c.getCantidad() : "",
-                c.getPrecioUnitario() != null ? formatoMoneda.format(c.getPrecioUnitario()) : "",
+                cantidadTotal > 0 ? String.valueOf(cantidadTotal) : "",
                 formatoMoneda.format(c.getTotal()),
                 c.getFechaCompra().format(formatoFecha),
                 c.getFormaPago().getEtiqueta(),
@@ -874,6 +972,42 @@ public class VentanaUnificada extends JFrame {
             };
             modeloTablaCompras.addRow(fila);
         }
+    }
+    
+    private void cambiarPagina(int direccion) {
+        int nuevaPagina = paginaActual + direccion;
+        
+        // Validar que la nueva página es válida
+        if (nuevaPagina >= 0 && nuevaPagina < totalPaginas) {
+            paginaActual = nuevaPagina;
+            cargarPaginaActual();
+            actualizarPaginacion();
+        }
+    }
+    
+    private void actualizarPaginacion() {
+        if (comprasCompletas == null || comprasCompletas.isEmpty()) {
+            lblPaginacion.setText("Sin facturas");
+            btnPaginaAnterior.setEnabled(false);
+            btnPaginaSiguiente.setEnabled(false);
+            return;
+        }
+        
+        // Actualizar label
+        int totalFacturas = comprasCompletas.size();
+        int inicio = paginaActual * FACTURAS_POR_PAGINA + 1;
+        int fin = Math.min((paginaActual + 1) * FACTURAS_POR_PAGINA, totalFacturas);
+        
+        lblPaginacion.setText(String.format("Mostrando %d-%d de %d facturas (Página %d de %d)", 
+                                            inicio, fin, totalFacturas, paginaActual + 1, totalPaginas));
+        
+        // Habilitar/deshabilitar botones
+        btnPaginaAnterior.setEnabled(paginaActual > 0);
+        btnPaginaSiguiente.setEnabled(paginaActual < totalPaginas - 1);
+        
+        // Cambiar color de botones según estado
+        btnPaginaAnterior.setBackground(btnPaginaAnterior.isEnabled() ? ACENTO : BG_INPUT);
+        btnPaginaSiguiente.setBackground(btnPaginaSiguiente.isEnabled() ? ACENTO : BG_INPUT);
     }
 
     

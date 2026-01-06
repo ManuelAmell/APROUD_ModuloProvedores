@@ -400,4 +400,11 @@ public class CompraService {
     public int contarItemsDeCompra(int idCompra) {
         return itemCompraDAO.contarItemsPorCompra(idCompra);
     }
+    
+    /**
+     * Suma las cantidades de todos los items de una compra.
+     */
+    public int sumarCantidadesDeCompra(int idCompra) {
+        return itemCompraDAO.sumarCantidadesPorCompra(idCompra);
+    }
 }

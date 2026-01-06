@@ -273,6 +273,29 @@ public class ItemCompraDAOMySQL implements ItemCompraDAO {
         return 0;
     }
     
+    @Override
+    public int sumarCantidadesPorCompra(int idCompra) {
+        String sql = "SELECT SUM(cantidad) as total FROM items_compra WHERE id_compra = ?";
+        
+        try (Connection conn = conexionBD.getConexion();
+             PreparedStatement stmt = conn.prepareStatement(sql)) {
+            
+            stmt.setInt(1, idCompra);
+            
+            try (ResultSet rs = stmt.executeQuery()) {
+                if (rs.next()) {
+                    return rs.getInt("total");
+                }
+            }
+            
+        } catch (SQLException e) {
+            System.err.println("Error al sumar cantidades: " + e.getMessage());
+            e.printStackTrace();
+        }
+        
+        return 0;
+    }
+    
     private ItemCompra mapearResultSet(ResultSet rs) throws SQLException {
         ItemCompra item = new ItemCompra();
         item.setId(rs.getInt("id"));

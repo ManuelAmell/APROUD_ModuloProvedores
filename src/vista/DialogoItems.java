@@ -221,6 +221,7 @@ public class DialogoItems extends JDialog {
         JScrollPane scrollTabla = new JScrollPane(tablaItems);
         scrollTabla.setBorder(BorderFactory.createLineBorder(new Color(100, 100, 100), 1));
         scrollTabla.getViewport().setBackground(BG_INPUT);
+        ModernScrollBarUI.aplicarScrollModerno(scrollTabla);
         
         JPanel panelTabla = new JPanel(new BorderLayout());
         panelTabla.setBackground(BG_PRINCIPAL);
