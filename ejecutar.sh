@@ -29,9 +29,9 @@ echo ""
 es_primera_vez() {
     # Verificar si existe la base de datos usando las credenciales de la aplicación
     if command -v mysql &> /dev/null; then
-        DB_EXISTS=$(mysql -u proveedor_app -pproveedor123 -e "SHOW DATABASES LIKE 'gestion_proveedores';" 2>/dev/null | grep -c "gestion_proveedores")
+        DB_EXISTS=$(mysql -u proveedor_app -pAmell123 -e "SHOW DATABASES LIKE 'gestion_proveedores';" 2>/dev/null | grep -c "gestion_proveedores")
     elif command -v mariadb &> /dev/null; then
-        DB_EXISTS=$(mariadb -u proveedor_app -pproveedor123 -e "SHOW DATABASES LIKE 'gestion_proveedores';" 2>/dev/null | grep -c "gestion_proveedores")
+        DB_EXISTS=$(mariadb -u proveedor_app -pAmell123 -e "SHOW DATABASES LIKE 'gestion_proveedores';" 2>/dev/null | grep -c "gestion_proveedores")
     else
         DB_EXISTS=0
     fi
@@ -100,7 +100,7 @@ CREATE INDEX idx_fecha_compra ON compras(fecha_compra);
 CREATE INDEX idx_categoria ON compras(categoria);
 INSERT INTO proveedores (nombre, nit, tipo, direccion, telefono, email, persona_contacto, informacion_pago, activo) VALUES ('Distribuidora ABC', '900123456-1', 'ropa', 'Calle 50 #30-25', '601-555-0100', 'ventas@abc.com', 'María García', 'Bancolombia - Cta 123456789', 1), ('Suministros del Norte', '800987654-2', 'calzado', 'Av. Libertador 150', '605-555-0200', 'contacto@norte.com', 'Carlos Rodríguez', 'Davivienda - Cta 987654321', 1);
 INSERT INTO compras (id_proveedor, numero_factura, categoria, descripcion, cantidad, precio_unitario, total, fecha_compra, forma_pago, estado_credito, fecha_pago) VALUES (1, 'FAC-001', 'zapatos', 'Zapatos deportivos Nike talla 42', 10, 150000, 1500000, '2025-01-02', 'efectivo', NULL, '2025-01-02'), (1, 'FAC-002', 'camisas', 'Camisas polo manga corta', 20, 45000, 900000, '2025-01-03', 'credito', 'pendiente', NULL);
-CREATE USER IF NOT EXISTS 'proveedor_app'@'localhost' IDENTIFIED BY 'proveedor123';
+CREATE USER IF NOT EXISTS 'proveedor_app'@'localhost' IDENTIFIED BY 'Amell123';
 GRANT ALL PRIVILEGES ON gestion_proveedores.* TO 'proveedor_app'@'localhost';
 FLUSH PRIVILEGES;
 EOSQL
