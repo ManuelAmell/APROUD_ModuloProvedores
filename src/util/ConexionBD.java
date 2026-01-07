@@ -58,7 +58,7 @@ public class ConexionBD {
     private static final String USUARIO = "proveedor_app";
 
     // Contraseña del usuario
-    private static final String PASSWORD = "Amell123";
+    private static final String PASSWORD = "proveedor123";
 
     // ========================================================
     // IMPLEMENTACIÓN DEL SINGLETON
